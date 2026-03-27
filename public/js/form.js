@@ -2,21 +2,33 @@
 let currentStep = 1;
 const totalSteps = 4;
 let dynamicFieldsConfig = [];
+const urlParams = new URLSearchParams(window.location.search);
+const formId = urlParams.get('formId') || 2; // Default to XI/XII if none
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadCMSSettings();
+  await loadFormInfo();
   await loadDynamicFields();
   initFormLogic();
 });
 
-async function loadCMSSettings() {
+async function loadFormInfo() {
   try {
     const res = await fetch('/api/settings');
     const s = await res.json();
+    
+    const formsRes = await fetch('/api/forms');
+    const forms = await formsRes.json();
+    const currentForm = forms.find(f => f.id == formId);
+
     const stitle = id('siteTitle'); if (stitle && s.site_title) stitle.textContent = s.site_title;
     const ssub = id('siteSubtitle'); if (ssub && s.site_subtitle) ssub.textContent = s.site_subtitle;
-    const ftitle = id('formTitle'); if (ftitle && s.form_title) ftitle.textContent = s.form_title;
-    const fsub = id('formSubtitle'); if (fsub && s.form_subtitle) fsub.textContent = s.form_subtitle;
+    
+    const ftitle = id('formTitle'); 
+    if (ftitle) ftitle.textContent = currentForm ? currentForm.name : s.form_title;
+    
+    const fsub = id('formSubtitle'); 
+    if (fsub) fsub.textContent = currentForm ? currentForm.description : s.form_subtitle;
+    
     const footer = id('footerText'); if (footer && s.footer_text) footer.textContent = s.footer_text;
     const logo = id('siteLogo'); if (logo && s.logo_path) logo.src = s.logo_path;
   } catch (e) { console.error('CMS Settings load error', e); }
@@ -24,7 +36,7 @@ async function loadCMSSettings() {
 
 async function loadDynamicFields() {
   try {
-    const res = await fetch('/api/form-fields?t=' + Date.now());
+    const res = await fetch(`/api/form-fields?formId=${formId}&t=` + Date.now());
     dynamicFieldsConfig = await res.json();
     dynamicFieldsConfig.sort((a, b) => (a.step - b.step) || (a.sort_order - b.sort_order));
 
@@ -40,7 +52,6 @@ async function loadDynamicFields() {
     const restOfStep1 = step1Fields.filter(f => f.field_name !== 'pupil_name');
 
     if (nameContainer && nameField) {
-      // Render pupil_name as full-width inside the col-md-6 container
       const nf = { ...nameField, column_width: 12 };
       nameContainer.innerHTML = `<div class="row">${renderField(nf)}</div>`;
     }
@@ -54,6 +65,15 @@ async function loadDynamicFields() {
       if (!container) continue;
       container.innerHTML = stepsGroup[s].map(f => renderField(f)).join('');
     }
+
+    // Hide steps if they have no fields
+    for (let s = 1; s <= 4; s++) {
+      if (stepsGroup[s].length === 0) {
+        const navItem = document.querySelector(`.nav-item[data-step="${s}"]`);
+        if (navItem) navItem.style.display = 'none';
+      }
+    }
+
   } catch (e) { console.error('Dynamic fields load error', e); }
 }
 
@@ -63,7 +83,6 @@ function previewUserPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
   
-  // Clear error if present
   const errEl = id('err_photograph');
   if (errEl) errEl.textContent = '';
   
@@ -149,6 +168,7 @@ function initFormLogic() {
     submitBtn.textContent = 'Submitting...';
     try {
       const formData = new FormData(form);
+      formData.append('form_id', formId); // Include the selected form ID
       const res = await fetch('/api/apply', { 
         method: 'POST', 
         body: formData

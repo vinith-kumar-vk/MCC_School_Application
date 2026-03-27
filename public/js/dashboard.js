@@ -15,6 +15,7 @@ async function showToast(msg) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await checkAuth();
+  await loadFormsList(); // First load the forms
   await loadStats();
   await loadRecentUsers();
 
@@ -34,6 +35,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 let sortableInstance = null;
 let allFields = [];
 let activeStepFilter = 0;
+let forms = [];
+
+async function loadFormsList() {
+    try {
+        const res = await fetch('/api/forms');
+        forms = await res.json();
+        const selectors = ['dashboardFormFilter', 'applicationsFormFilter', 'builderFormSelector'];
+        selectors.forEach(sid => {
+            const el = id(sid);
+            if (el) {
+                const currentVal = el.value;
+                el.innerHTML = (sid === 'builderFormSelector' ? '' : '<option value="">All Applications</option>') + 
+                    forms.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+                if (currentVal) el.value = currentVal;
+            }
+        });
+    } catch (e) { console.error('Forms load error', e); }
+}
 
 function initSortable() {
   const el = document.getElementById('fieldsTbody');
@@ -51,19 +70,23 @@ function initSortable() {
 
 async function loadStats() {
   try {
-    const res = await fetch('/api/stats');
+    const formId = id('dashboardFormFilter')?.value || '';
+    const res = await fetch(`/api/stats?formId=${formId}`);
     const data = await res.json();
     animateValue("stat-total", 0, data.total || 0, 1000);
-    animateValue("stat-science", 0, data.science || 0, 1000);
-    animateValue("stat-commerce", 0, data.commerce || 0, 1000);
-    animateValue("stat-others", 0, data.others || 0, 1000);
+    // Note: detailed stats (science/commerce) are now form-specific, 
+    // for now we set them to 0 or hide if no specific logic exists
+    animateValue("stat-science", 0, 0, 1000);
+    animateValue("stat-commerce", 0, 0, 1000);
+    animateValue("stat-others", 0, 0, 1000);
   } catch (e) { console.error('Stats error:', e); }
 }
 
 async function loadRecentUsers() {
   const tbody = id('recentTbody');
+  const formId = id('dashboardFormFilter')?.value || '';
   try {
-    const res = await fetch('/api/applications?limit=5');
+    const res = await fetch(`/api/applications?limit=5&formId=${formId}`);
     const data = await res.json();
     const apps = data.applications || [];
     if (!apps.length) {
@@ -72,12 +95,13 @@ async function loadRecentUsers() {
     }
     tbody.innerHTML = apps.map(app => {
       const date = new Date(app.submitted_at).toLocaleDateString();
+      const d = app.form_data || {};
       return `
         <tr>
-          <td style="font-weight: 600;">${esc(app.pupil_name)}</td>
-          <td>${esc(app.admission_class)}</td>
-          <td>${esc(app.community)}</td>
-          <td><span class="badge" style="background:#f1f5f9; color:#475569;">${esc(app.group_choice)}</span></td>
+          <td style="font-weight: 600;">${esc(d.pupil_name || 'N/A')}</td>
+          <td>${esc(d.admission_class || 'N/A')}</td>
+          <td>${esc(d.community || 'N/A')}</td>
+          <td><span class="badge" style="background:#f1f5f9; color:#475569;">${esc(app.form_name)}</span></td>
           <td style="color: #64748b;">${date}</td>
         </tr>
       `;
@@ -146,11 +170,15 @@ async function saveSettings(p) {
 
 async function loadFormFields() {
   try {
-    const res = await fetch('/api/form-fields');
+    const formId = id('builderFormSelector')?.value;
+    if (!formId) return;
+    const res = await fetch(`/api/form-fields?formId=${formId}`);
     allFields = await res.json();
     filterStep(activeStepFilter);
   } catch (e) { console.error('Fields load error', e); }
 }
+
+function loadFields() { loadFormFields(); } // Alias for selector change
 
 function filterStep(step) {
   activeStepFilter = step;
@@ -201,8 +229,9 @@ async function loadAllUsers(offset = 0) {
   tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Loading...</td></tr>';
   
   const search = id('searchInput')?.value || '';
+  const formId = id('applicationsFormFilter')?.value || '';
   try {
-    const res = await fetch(`/api/applications?page=${currentPage}&limit=${limit}&search=${search}`);
+    const res = await fetch(`/api/applications?page=${currentPage}&limit=${limit}&search=${search}&formId=${formId}`);
     const data = await res.json();
     const apps = data.applications || [];
     
@@ -210,17 +239,20 @@ async function loadAllUsers(offset = 0) {
     id('prevPageBtn').disabled = data.page <= 1;
     id('nextPageBtn').disabled = data.page >= Math.ceil(data.total/data.limit);
 
-    if (!apps.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-empty">No users found.</td></tr>'; return; }
+    if (!apps.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-empty">No entries found.</td></tr>'; return; }
 
-    tbody.innerHTML = apps.map(app => `
-      <tr>
-        <td style="font-weight: 600; color: #1e293b;">${esc(app.pupil_name)}</td>
-        <td><span class="badge ${app.group_choice.includes('Science') ? 'badge-student' : 'badge-staff'}">${esc(app.group_choice.split('/')[0] || 'GENERAL')}</span></td>
-        <td style="color: #64748b; font-size: 13px;">${esc(app.contact_no_email)}</td>
-        <td><span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">${esc(app.status)}</span></td>
-        <td><button class="action-btn" onclick="viewDetail(${app.id})"><i class="fa-solid fa-eye"></i> View</button></td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = apps.map(app => {
+        const d = app.form_data || {};
+        return `
+            <tr>
+                <td style="font-weight: 600; color: #1e293b;">${esc(d.pupil_name || 'N/A')}</td>
+                <td><span class="badge badge-staff">${esc(app.form_name)}</span></td>
+                <td style="color: #64748b; font-size: 13px;">${esc(d.contact_no_email || 'N/A')}</td>
+                <td><span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">${esc(app.status)}</span></td>
+                <td><button class="action-btn" onclick="viewDetail(${app.id})"><i class="fa-solid fa-eye"></i> View</button></td>
+            </tr>
+        `;
+    }).join('');
   } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Error.</td></tr>'; }
 }
 
@@ -229,37 +261,12 @@ function viewDetail(id) {
   const body = document.getElementById('modalBody');
   if (!modal || !body) return;
 
-  // Show loading state
-  body.innerHTML = '<div style="text-align:center; padding:50px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:32px; color:maroon;"></i><p style="margin-top:10px; color:#64748b;">Loading application details...</p></div>';
+  body.innerHTML = '<div style="text-align:center; padding:50px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:32px; color:maroon;"></i><p style="margin-top:10px; color:#64748b;">Loading...</p></div>';
   modal.classList.add('active');
 
   fetch(`/api/applications/${id}`).then(r => r.json()).then(app => {
-    document.getElementById('modalTitle').textContent = "PUPIL ADMISSION DETAIL - " + (app.pupil_name || '').toUpperCase();
-
-    const sections = {
-      "SECTION 1: APPLICANT'S INFORMATION": {
-        "Pupil Name": app.pupil_name, "Class of Admission": app.admission_class, "Date of Birth": app.dob, "Gender": app.gender, 
-        "Blood Group": app.blood_group, "Nationality": app.nationality, "Religion": app.religion, 
-        "Caste": app.caste, "Community": app.community, "Mother Tongue": app.mother_tongue,
-        "ID Mark 1": app.id_mark_1, "ID Mark 2": app.id_mark_2
-      },
-      "SECTION 2: CONTACT & PARENTS INFORMATION": {
-        "Address for Communication": app.comm_address, "Contact & Email": app.contact_no_email,
-        "Father Name": app.father_name, "Father Qualification": app.father_qualification, "Father Occupation": app.father_occupation, "Father Office Address": app.father_office_address, "Father Mobile": app.father_mobile, "Father Landline": app.father_landline, "Father Income": app.father_income,
-        "Mother Name": app.mother_name, "Mother Qualification": app.mother_qualification, "Mother Occupation": app.mother_occupation, "Mother Office Address": app.mother_office_address, "Mother Mobile": app.mother_mobile, "Mother Landline": app.mother_landline, "Mother Income": app.mother_income
-      },
-      "SECTION 3: ACADEMIC HISTORY & SELECTION": {
-        "Qualifying Exam": app.qualifying_exam_name, "Year of Passing": app.qualifying_exam_year, 
-        "Medium of Instruction": app.medium_of_instruction, "Last School Attended": app.last_school_details,
-        "EMIS No": app.emis_no, "Aadhaar No": app.aadhaar_no, "Documents Attached": app.tc_mark_attached,
-        "First Language Choice": app.first_language, "Group Applied For": app.group_choice
-      },
-      "SECTION 4: X STD MARK SHEET DETAILS": {
-        "Language": app.marks_lang_val, "English": app.marks_eng_val, "Mathematics": app.marks_math_val,
-        "Science": app.marks_sci_val, "Social Science": app.marks_soc_val, "GRAND TOTAL": app.marks_grand_total,
-        "Sports/Extra-Curricular": app.credentials
-      }
-    };
+    const d = app.form_data || {};
+    document.getElementById('modalTitle').textContent = "PUPIL DETAIL - " + (d.pupil_name || '').toUpperCase();
 
     let html = `
       <div style="background: #fff; border-radius: 12px; margin-bottom: 24px;">
@@ -268,53 +275,40 @@ function viewDetail(id) {
             ${app.photograph_path ? `<img src="${app.photograph_path}" style="width:100%; height:100%; object-fit:cover;" />` : `<i class="fa-solid fa-user-graduate" style="font-size:60px; color:#cbd5e1;"></i>`}
           </div>
           <div style="flex:1;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-              <div>
-                <h1 style="margin:0; font-size:32px; font-weight:800; color:#1e293b; letter-spacing:-0.5px;">${esc(app.pupil_name)}</h1>
-                <p style="margin:4px 0 12px; color:#64748b; font-size:16px; font-weight:500;"><i class="fa-solid fa-calendar-check"></i> Academic Year: <span style="color:maroon;">${esc(app.academic_year || '2026-2027')}</span></p>
-                <div style="display:flex; gap:12px;">
-                   <span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}" style="font-size:13px; padding:6px 16px;">INTERNAL STATUS: ${app.status}</span>
-                   <span class="badge" style="background:#f1f5f9; color:#475569; font-size:13px; padding:6px 16px;">SERIAL NO: ${app.serial_no || 'Pending'}</span>
-                </div>
+            <div>
+              <h1 style="margin:0; font-size:32px; font-weight:800; color:#1e293b; letter-spacing:-0.5px;">${esc(d.pupil_name || 'N/A')}</h1>
+              <p style="margin:4px 0 12px; color:#64748b; font-size:16px;"><i class="fa-solid fa-file-alt"></i> Form: <span style="color:maroon; font-weight:bold;">${esc(app.form_name)}</span></p>
+              <div style="display:flex; gap:12px;">
+                 <span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">STATUS: ${app.status}</span>
+                 <span class="badge" style="background:#f1f5f9; color:#475569;">SERIAL: ${app.serial_no || 'N/A'}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div style="display:grid; gap:32px;">`;
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1px; background:#f1f5f9; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">`;
     
-    for (const [title, fields] of Object.entries(sections)) {
-      html += `<div style="background:white; border:1px solid #f1f5f9; border-radius:12px; padding:0; overflow:hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div style="background:#8B1A2E; color:white; padding:12px 20px; font-size:14px; font-weight:700; letter-spacing:0.5px;">${title}</div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1px; background:#f1f5f9;">`;
-      for (const [label, val] of Object.entries(fields)) {
-        html += `<div style="background:white; padding:16px 20px;">
-          <span style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.3px;">${label}</span>
-          <span style="font-weight:600; font-size:15px; color:#1e293b; line-height:1.4;">${esc(val) || '—'}</span>
-        </div>`;
-      }
-      html += `</div></div>`;
+    for (const [label, val] of Object.entries(d)) {
+      html += `<div style="background:white; padding:16px 20px;">
+        <span style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px;">${esc(label.replace(/_/g, ' '))}</span>
+        <span style="font-weight:600; font-size:15px; color:#1e293b;">${esc(val) || '—'}</span>
+      </div>`;
     }
-    html += '</div>';
     
-    body.innerHTML = html + `
+    body.innerHTML = html + `</div>
       <div style="margin-top:40px; padding:24px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:12px; color:#64748b;">
-          <i class="fa-solid fa-clock-rotate-left" style="font-size:20px;"></i>
-          <div>
-            <p style="margin:0; font-size:13px; font-weight:600;">Submitted On</p>
-            <p style="margin:0; font-size:12px;">${new Date(app.submitted_at).toLocaleString()}</p>
-          </div>
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <div><p style="margin:0; font-size:13px; font-weight:600;">Submitted On</p><p style="margin:0; font-size:12px;">${new Date(app.submitted_at).toLocaleString()}</p></div>
         </div>
         <div style="display:flex; gap:16px;">
-          <button class="btn" style="background:#00ba7c; color:white; padding:12px 28px; border-radius:8px; font-weight:700; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Approved')"><i class="fa-solid fa-check-circle"></i> APPROVE ADMISSION</button>
-          <button class="btn" style="background:#ef4444; color:white; padding:12px 28px; border-radius:8px; font-weight:700; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Rejected')"><i class="fa-solid fa-times-circle"></i> REJECT APPLICATION</button>
+          <button class="btn" style="background:#00ba7c; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Approved')">APPROVE</button>
+          <button class="btn" style="background:#ef4444; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Rejected')">REJECT</button>
         </div>
       </div>
     `;
-    modal.querySelector('.modal').style.maxWidth = '1200px';
   }).catch(err => {
-    body.innerHTML = `<div style="text-align:center; padding:50px; color:#ef4444;"><i class="fa-solid fa-circle-exclamation" style="font-size:48px;"></i><p style="margin-top:10px; font-weight:600;">Failed to load details. Please try again.</p></div>`;
+    body.innerHTML = `<div style="text-align:center; padding:50px; color:#ef4444;"><i class="fa-solid fa-circle-exclamation"></i><p>Failed to load data.</p></div>`;
   });
 }
 
@@ -326,13 +320,22 @@ async function updateStatus(id, status) {
 }
 
 async function exportToExcel() {
+  const formId = id('applicationsFormFilter')?.value || '';
   try {
-    const res = await fetch('/api/applications?limit=10000');
+    const res = await fetch(`/api/applications?limit=10000&formId=${formId}`);
     const data = await res.json();
-    const worksheet = XLSX.utils.json_to_sheet(data.applications);
+    const flattened = data.applications.map(app => ({
+        ID: app.id,
+        Serial: app.serial_no,
+        Form: app.form_name,
+        Status: app.status,
+        SubmittedAt: app.submitted_at,
+        ...app.form_data
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(flattened);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Admissions");
-    XLSX.writeFile(workbook, "MCC_School_Admissions_Full_Report.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Entries");
+    XLSX.writeFile(workbook, `MCC_Admissions_Report_${new Date().getTime()}.xlsx`);
   } catch (e) { showToast('Export failed'); }
 }
 
@@ -355,7 +358,8 @@ function esc(s) { if(!s) return ''; const d=document.createElement('div'); d.tex
 // ── FIELD MODAL ──
 function openFieldModal(fieldId) {
   const modal = id('fieldModal');
-  if (!modal) return;
+  const formId = id('builderFormSelector')?.value;
+  if (!modal || !formId) { showToast('Please select a form first'); return; }
 
   // Reset form
   ['fld_id','fld_name','fld_label','fld_options'].forEach(x => { if(id(x)) id(x).value = ''; });
@@ -377,7 +381,7 @@ function openFieldModal(fieldId) {
       if(id('fld_options')) id('fld_options').value = f.options || '';
       if(id('fld_width')) id('fld_width').value = f.column_width || 6;
       if(id('fld_required')) id('fld_required').checked = !!f.required;
-      id('row_field_name').style.display = 'none'; // Can't rename DB key
+      id('row_field_name').style.display = 'none'; 
       if (f.field_type === 'select') id('row_options') && (id('row_options').style.display = 'block');
       modal.classList.add('active');
     });
@@ -385,7 +389,6 @@ function openFieldModal(fieldId) {
     modal.classList.add('active');
   }
 
-  // Show/hide options row on type change
   const typeSelect = id('fld_type');
   if (typeSelect) {
     typeSelect.onchange = () => {
@@ -398,7 +401,9 @@ function closeFieldModal() { id('fieldModal') && id('fieldModal').classList.remo
 
 async function saveField() {
   const fid = id('fld_id')?.value;
+  const formId = id('builderFormSelector')?.value;
   const body = {
+    form_id: parseInt(formId),
     step: parseInt(id('fld_step')?.value || '1'),
     field_type: id('fld_type')?.value || 'text',
     field_name: id('fld_name')?.value?.trim(),
@@ -421,23 +426,17 @@ async function saveField() {
       res = await fetch('/api/form-fields', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
     }
     const data = await res.json();
-    if (data.success) {
-      showToast(fid ? 'Field updated!' : 'Field added!');
-      closeFieldModal();
-      loadFormFields();
-    } else {
-      showToast(data.message || 'Save failed');
-    }
+    if (data.success) { showToast(fid ? 'Field updated!' : 'Field added!'); closeFieldModal(); loadFormFields(); }
+    else { showToast(data.message || 'Save failed'); }
   } catch (e) { showToast('Error saving field'); }
 }
 
 async function deleteField(fid) {
-  if (!confirm('Delete this field? This cannot be undone.')) return;
+  if (!confirm('Delete this field?')) return;
   try {
     const res = await fetch(`/api/form-fields/${fid}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.success) { showToast('Field deleted!'); loadFormFields(); }
-    else showToast('Delete failed');
   } catch (e) { showToast('Error deleting field'); }
 }
 
@@ -447,11 +446,70 @@ async function saveFieldsOrder() {
   try {
     const res = await fetch('/api/form-fields-order', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ order }) });
     const data = await res.json();
+    if (data.success) { showToast('Order saved!'); id('saveOrderBtn').style.display = 'none'; loadFormFields(); }
+  } catch (e) { showToast('Error saving order'); }
+}
+
+function openFormSettingsModal() {
+  const formId = id('builderFormSelector')?.value;
+  if (!formId) return showToast('Select a form first');
+  const form = forms.find(f => f.id == formId);
+  if (!form) return;
+  id('edit_form_name').value = form.name;
+  id('edit_form_desc').value = form.description || '';
+  id('formSettingsModal').classList.add('active');
+}
+
+function closeFormSettingsModal() { id('formSettingsModal').classList.remove('active'); }
+
+async function saveFormSettings() {
+  const formId = id('builderFormSelector')?.value;
+  const name = id('edit_form_name').value;
+  const description = id('edit_form_desc').value;
+  try {
+    const res = await fetch(`/api/forms/${formId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description })
+    });
+    if (res.ok) {
+        showToast('Form updated!');
+        closeFormSettingsModal();
+        await loadFormsList();
+        loadFormFields();
+    }
+  } catch (e) { showToast('Error saving form'); }
+}
+
+async function deleteForm() {
+  if (!confirm('This will disable this form. Proceed?')) return;
+  const formId = id('builderFormSelector')?.value;
+  try {
+    const res = await fetch(`/api/forms/${formId}`, { method: 'DELETE' });
+    if (res.ok) {
+        showToast('Form deleted!');
+        closeFormSettingsModal();
+        window.location.reload();
+    }
+  } catch (e) { showToast('Error deleting form'); }
+}
+
+async function createNewForm() {
+  const name = prompt("Enter new form name (e.g., LKG to Class V):");
+  if (!name) return;
+  try {
+    const res = await fetch('/api/forms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description: 'New admission form' })
+    });
+    const data = await res.json();
     if (data.success) {
-      showToast('Order saved!');
-      id('saveOrderBtn').style.display = 'none';
+      showToast('New form created!');
+      await loadFormsList();
+      id('builderFormSelector').value = data.id;
       loadFormFields();
     }
-  } catch (e) { showToast('Error saving order'); }
+  } catch (e) { showToast('Error creating form'); }
 }
 
