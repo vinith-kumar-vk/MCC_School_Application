@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login – MCC-MRF Innovation Park</title>
+  <meta name="description" content="Admin login for MCC-MRF Innovation Park Incubation Dashboard"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/login.css"/>
+</head>
+<body>
+  <div class="login-bg">
+    <div class="login-left">
+      <div class="login-brand">
+        <div class="login-logo">
+          <img src="/images/logo.png" alt="MCC Logo" width="80" height="80" style="background:#fff; border-radius:14px; padding:5px; box-shadow:0 8px 24px rgba(0,0,0,0.2)"/>
+        </div>
+        <div class="login-brand-text">
+          <div class="brand-title">MCC <span class="brand-dot">·</span> MRF</div>
+          <div class="brand-sub">INNOVATION PARK</div>
+          <div class="brand-college">Madras Christian College</div>
+        </div>
+      </div>
+      <div class="login-tagline">
+        <h2>Empowering Startup Dreams</h2>
+        <p>Manage incubation applications and track your innovation ecosystem from one place.</p>
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="login-card">
+        <div class="login-card-header">
+          <h1>Admin Login</h1>
+          <p>Sign in to access the dashboard</p>
+        </div>
+        <form id="loginForm" novalidate>
+          <div class="lf-group">
+            <label for="username" class="lf-label">Username</label>
+            <div class="lf-input-wrap">
+              <svg class="lf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="username" name="username" class="lf-input" placeholder="Enter username" autocomplete="username" required/>
+            </div>
+            <span class="lf-error" id="err_username"></span>
+          </div>
+          <div class="lf-group">
+            <label for="password" class="lf-label">Password</label>
+            <div class="lf-input-wrap">
+              <svg class="lf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              <input type="password" id="password" name="password" class="lf-input" placeholder="Enter password" autocomplete="current-password" required/>
+              <button type="button" class="lf-eye-btn" id="togglePwd" title="Show/hide password">
+                <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <span class="lf-error" id="err_password"></span>
+          </div>
+          <div class="lf-forgot-row">
+            <label class="lf-remember">
+              <input type="checkbox" id="rememberMe"/> Remember me
+            </label>
+          </div>
+          <button type="submit" class="lf-submit-btn" id="loginBtn">
+            <span id="loginBtnText">Sign In</span>
+            <div class="lf-spinner" id="loginSpinner"></div>
+          </button>
+          <div class="lf-error-global" id="globalError"></div>
+        </form>
+        <div class="login-card-footer">
+          <a href="/index.html" class="lf-back-link">← Back to Application Form</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="js/login.js"></script>
+</body>
+</html>

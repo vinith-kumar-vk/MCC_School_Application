@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APPLICATION FOR ADMISSION - MCC CAMPUS MATRICULATION HR SEC SCHOOL</title>
+  <meta name="description"
+    content="Online application form for Class XI admission at MCC Campus Matriculation Higher Secondary School." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/form.css" />
+  <style>
+    .custom-mcc-header {
+      border-left: 5px solid var(--mcc-maroon);
+      padding-left: 20px;
+      margin-left: -5px;
+    }
+
+    .custom-mcc-header h1 {
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+    }
+
+    .photo-box-centered {
+      transition: all 0.3s ease;
+    }
+
+    .photo-box-centered:hover {
+      border-color: var(--mcc-maroon) !important;
+      background-color: #fff9f9 !important;
+    }
+
+    .photo-box-centered img {
+      border-radius: 2px;
+    }
+
+    /* Simple circles logic */
+    .nav-num {
+      width: 42px !important;
+      height: 42px !important;
+      background: white !important;
+      border: 1.5px solid #eee !important;
+      color: #999 !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-weight: 700 !important;
+    }
+
+    .nav-item.active .nav-num,
+    .nav-item.completed .nav-num {
+      background: var(--mcc-maroon) !important;
+      border-color: var(--mcc-maroon) !important;
+      color: white !important;
+      box-shadow: 0 4px 10px rgba(117, 20, 33, 0.2) !important;
+    }
+
+    .sidebar-nav {
+      background: #ffffff !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="premium-wrapper">
+
+    <div class="main-container">
+
+      <!-- Left Navigation Sidebar -->
+      <aside class="sidebar-nav">
+        <div class="sidebar-content">
+          <div class="brand-section mb-5">
+            <div class="d-flex flex-column gap-3">
+              <img src="/images/logo.png" alt="Logo" class="brand-logo shadow-sm" id="siteLogo" />
+              <div>
+                <h2 class="sidebar-brand-name mb-0" id="siteTitle">MCC CAMPUS</h2>
+                <p class="sidebar-tagline mb-0" id="siteSubtitle">Matriculation Hr Sec School</p>
+              </div>
+            </div>
+          </div>
+
+          <nav class="step-navigation">
+            <div class="nav-item active" data-step="1">
+              <span class="nav-num">01</span>
+              <div class="nav-text">
+                <span class="nav-label">Bio & Identity</span>
+                <span class="nav-desc">Pupil's Details</span>
+              </div>
+            </div>
+            <div class="nav-item" data-step="2">
+              <span class="nav-num">02</span>
+              <div class="nav-text">
+                <span class="nav-label">Parents Info</span>
+                <span class="nav-desc">Family Records</span>
+              </div>
+            </div>
+            <div class="nav-item" data-step="3">
+              <span class="nav-num">03</span>
+              <div class="nav-text">
+                <span class="nav-label">Academic History</span>
+                <span class="nav-desc">School & Choice</span>
+              </div>
+            </div>
+            <div class="nav-item" data-step="4">
+              <span class="nav-num">04</span>
+              <div class="nav-text">
+                <span class="nav-label">Marks & Review</span>
+                <span class="nav-desc">Performance & Submit</span>
+              </div>
+            </div>
+          </nav>
+
+          <div class="sidebar-footer mt-auto pt-4">
+            <p class="small opacity-50 mb-0" id="footerText">© 2026 MCC Campus Higher Secondary School</p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Side Content Area -->
+      <main class="content-area">
+        <!-- New Combined Global Header -->
+        <div class="content-header p-4 d-flex align-items-center justify-content-between border-bottom bg-white"
+          style="position: sticky; top: 0; z-index: 10;">
+
+          <!-- Left: Title & Subtitle with Maroon Bar -->
+          <div class="form-title-group" style="border-left: 4px solid var(--mcc-maroon); padding-left: 16px;">
+            <h1 class="h3 fw-bold text-uppercase mb-1" id="formTitle"
+              style="color: #0b1c3c; font-weight: 800 !important; letter-spacing: -0.5px;">APPLICATION FOR ADMISSION
+              (CLASS XI AND XII)</h1>
+            <p class="text-muted mb-0" id="formSubtitle" style="font-size: 0.95rem;">Please refer to the physical form
+              and fill all mandatory fields exactly.</p>
+          </div>
+
+          <!-- Right: Progress Bar -->
+          <div class="progress-container d-flex align-items-center gap-3">
+            <div class="progress-bar-wrap"
+              style="width: 120px; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden;">
+              <div class="progress-bar-fill" id="progressBar"
+                style="height: 100%; background: #00b894; width: 25%; transition: width 0.3s ease;"></div>
+            </div>
+            <span class="progress-text text-muted" style="font-size: 0.9rem; font-weight: 600;">Step <span
+                id="currentStepText" class="text-dark">1</span> of 4</span>
+          </div>
+
+        </div>
+
+        <div class="form-container-scroll pt-4">
+          <div class="form-content-wrapper">
+            <form id="admissionForm" method="POST" novalidate>
+              <!-- Step 1: Bio -->
+              <section class="form-step active" id="step1">
+
+                <div class="row g-4 position-relative">
+                  <!-- Serial No & Year SUB HEADINGS below header -->
+                  <div class="col-12 mb-2">
+                    <div class="row px-3">
+                      <div class="col-md-6 text-start">
+                        <span class="fw-bold" style="font-size: 0.95rem; color: var(--mcc-maroon);">Serial No. B</span>
+                      </div>
+                      <div class="col-md-6 text-end">
+                        <span class="fw-bold" style="font-size: 0.95rem; color: var(--mcc-maroon);">APPLICATION 2026 -
+                          2029</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Name (left) + Photo (right) with space-between -->
+                  <div class="col-12 mb-3 mt-1 px-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <!-- Left: Name field rendered here -->
+                      <div id="step1NameContainer" style="flex: 1; max-width: 50%;">
+                        <!-- pupil_name field injected by form.js -->
+                      </div>
+
+                      <!-- Right: Passport photo upload -->
+                      <div class="text-end">
+                        <span class="d-block mb-2 fw-bold text-muted" style="font-size: 0.75rem;">Affix Recent Passport
+                          Size Photograph <span class="text-danger">*</span></span>
+                        <div class="photo-box-centered ms-auto position-relative"
+                          style="width: 120px; height: 150px; border: 2px dashed #8b1a2e; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; cursor: pointer;"
+                          onclick="document.getElementById('photograph').click()">
+                          <img id="photoPreview"
+                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='150' viewBox='0 0 120 150'%3E%3Crect width='100%25' height='100%25' fill='%23fafafa'/%3E%3C/svg%3E"
+                            alt="Upload" style="width: 100%; height: 100%; object-fit: cover;" />
+                          <div class="upload-placeholder" style="position: absolute; text-align: center;">
+                            <img
+                              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23bbb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/%3E%3Ccircle cx='12' cy='13' r='4'/%3E%3C/svg%3E"
+                              style="display: block; margin: 0 auto 5px;" />
+                          </div>
+                        </div>
+                        <input type="file" name="photograph" id="photograph" class="d-none" accept="image/*"
+                          onchange="previewUserPhoto(event)" />
+                        <div class="error-msg text-danger small mt-1" id="err_photograph"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Rest of Step 1 dynamic fields -->
+                  <div class="col-12">
+                    <div class="row g-4" id="dynamicFieldsStep1">
+                      <!-- Dynamic Fields for Step 1 (except pupil_name) -->
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Step 2: Parents -->
+              <section class="form-step d-none" id="step2">
+                <div class="step-header mb-4">
+                  <h2 class="step-title">Parents' Information</h2>
+                  <p class="step-subtitle">Provide details for both parents as per school records.</p>
+                </div>
+
+                <div class="row g-4" id="dynamicFieldsStep2">
+                  <!-- Dynamic Fields for Step 2 -->
+                </div>
+              </section>
+
+              <!-- Step 3: Schooling -->
+              <section class="form-step d-none" id="step3">
+                <div class="step-header mb-4">
+                  <h2 class="step-title">Academic History & Group Choice</h2>
+                  <p class="step-subtitle">Details about previous schooling and your choice for Class XI.</p>
+                </div>
+
+                <div class="row g-4 mt-2" id="dynamicFieldsStep3">
+                  <!-- Dynamic Fields for Step 3 -->
+                </div>
+              </section>
+
+              <!-- Step 4: Marks & Review -->
+              <section class="form-step d-none" id="step4">
+                <div class="step-header mb-4">
+                  <h2 class="step-title">Academic Performance</h2>
+                  <p class="step-subtitle">Enter your X Std marks and verify your application.</p>
+                </div>
+
+                <div class="row g-4 mb-4" id="dynamicFieldsStep4">
+                  <!-- Dynamic Fields for Step 4 (Marks) -->
+                </div>
+
+                <div class="review-summary-card mb-4 bg-light border p-4 rounded-4 shadow-sm">
+                  <h4 class="small fw-bold text-uppercase opacity-75 mb-3">Declaration of Truth</h4>
+                  <p class="small text-secondary mb-0">I hereby certify that all information provided in this
+                    application is accurate and complete to the best of my knowledge. I understand that any false
+                    information may lead to the rejection of this application.</p>
+                </div>
+
+                <div class="declaration-checklist">
+                  <div class="check-item-modern p-3 border rounded-3 mb-3 transition-all d-flex align-items-center">
+                    <input type="checkbox" class="form-check-input ms-0 me-3 mt-0 flex-shrink-0"
+                      name="declaration_agreed" id="decl1" value="1" />
+                    <label for="decl1" class="mb-0">I declare that the above statements are true and correct to my best
+                      knowledge.</label>
+                  </div>
+                  <div class="error-msg" id="err_declaration"></div>
+                </div>
+              </section>
+
+              <!-- Navigation Footer -->
+              <div
+                class="navigation-bar-premium mt-5 pt-4 d-flex justify-content-between align-items-center border-top">
+                <button type="button" class="btn btn-premium-secondary d-none" id="prevBtn">Previous</button>
+                <div class="ms-auto d-flex gap-3">
+                  <button type="reset" class="btn btn-link text-decoration-none text-muted" id="clearBtn">Clear
+                    All</button>
+                  <button type="button" class="btn btn-premium-maroon px-5" id="nextBtn">Continue</button>
+                  <button type="submit" class="btn btn-premium-maroon px-5 d-none" id="submitBtn">Finish &
+                    Submit</button>
+                </div>
+              </div>
+
+            </form>
+          </div>
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- Success Modal -->
+  <div class="premium-modal-overlay" id="successModal">
+    <div class="premium-modal text-center p-5 bg-white rounded-5 shadow-2xl">
+      <div class="success-lottie mb-4"><span>✨</span></div>
+      <h2 class="fw-bold fs-2 mb-3">Submission Success!</h2>
+      <p class="text-secondary mb-4">Your application for admission has been received. Our administrative team will
+        review it shortly.</p>
+      <button class="btn btn-premium-maroon w-100 py-3 rounded-pill fs-5" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script src="js/form.js"></script>
+</body>
+
+</html>
