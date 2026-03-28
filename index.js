@@ -153,22 +153,61 @@ try {
       [2, 4, 'number', 'marks_grand_total', 'Total', '500', 1, null, 6, 12],
       [2, 4, 'textarea', 'credentials', '20. Proficiency in Sports / Extracurricular activities / Music', '', 0, null, 7, 12]
     ];
-
-    // Form 1 (LKG - X)
+    // Form 1 (LKG - X) Fields
     const lkgFields = [
-      [1, 1, 'text', 'pupil_name', 'Name of the Pupil ( Block Letters )', 'Pupil name here', 1, null, 1, 12],
-      [1, 1, 'text', 'admission_class', 'Class of Admission', 'LKG', 1, null, 2, 6],
-      [1, 1, 'date', 'dob', 'Date of Birth', '', 1, null, 3, 6],
-      [1, 1, 'select', 'gender', 'Gender', '', 1, 'Male,Female', 4, 6],
-      [1, 1, 'text', 'father_name', 'Father Name', '', 1, null, 5, 6],
-      [1, 1, 'text', 'mother_name', 'Mother Name', '', 1, null, 6, 6]
+      // Step 1: Pupil's Details
+      [1, 1, 'text', 'class_registered', '1. Class Registered for', 'e.g. LKG', 1, null, 1, 6],
+      [1, 1, 'text', 'pupil_name', '2. Name of the Pupil in English (BLOCK LETTERS)', 'Full Name', 1, null, 2, 12],
+      [1, 1, 'text', 'pupil_name_tamil', '3. Name of the Pupil in Tamil', 'தமிழில் பெயர்', 1, null, 3, 12],
+      [1, 1, 'date', 'dob', '4. Date of Birth', '', 1, null, 4, 6],
+      [1, 1, 'select', 'gender', '5. Gender', '', 1, 'Male,Female', 5, 3],
+      [1, 1, 'text', 'blood_group', '6. Blood Group', '', 1, null, 6, 3],
+      [1, 1, 'text', 'nationality', '7. Nationality', 'Indian', 1, null, 7, 6],
+      [1, 1, 'text', 'religion', '8. Religion', '', 1, null, 8, 6],
+      [1, 1, 'text', 'caste', '9. a. Caste (For statistical purpose only)', '', 0, null, 9, 6],
+      [1, 1, 'select', 'community', '9. b. Community', 'Select', 1, 'OC,BC,MBC,SC,ST,Denotified Community', 10, 6],
+      [1, 1, 'text', 'aadhaar_no', '9. c. Aadhaar Card No.', '', 1, null, 11, 12],
+      
+      // Step 2: Communication & Parents Info
+      [1, 2, 'textarea', 'comm_address', '10. Address for Communication', '', 1, null, 1, 12],
+      [1, 2, 'text', 'contact_no_email', '11. Contact No. & Email ID', '', 1, null, 2, 12],
+      [1, 2, 'text', 'mother_tongue', '11. a. Mother Tongue', '', 1, null, 3, 6],
+      [1, 2, 'text', 'other_languages', '11. b. Any other language known to the Pupil', '', 0, null, 4, 6],
+      [1, 2, 'text', 'father_name', '12. a. Father Name', '', 1, null, 5, 6],
+      [1, 2, 'text', 'mother_name', '12. a. Mother Name', '', 1, null, 6, 6],
+      [1, 2, 'date', 'father_dob', '12. b. Date of Birth (Father)', '', 1, null, 7, 6],
+      [1, 2, 'date', 'mother_dob', '12. b. Date of Birth (Mother)', '', 1, null, 8, 6],
+      [1, 2, 'text', 'father_edu', '12. c. Educational Qualification (Father)', '', 1, null, 9, 6],
+      [1, 2, 'text', 'mother_edu', '12. c. Educational Qualification (Mother)', '', 1, null, 10, 6],
+      [1, 2, 'text', 'father_occ', '12. d. Occupation (Father)', '', 1, null, 11, 6],
+      [1, 2, 'text', 'mother_occ', '12. d. Occupation (Mother)', '', 1, null, 12, 6],
+      [1, 2, 'textarea', 'father_office', '12. e. Name of the Office & Address (Father)', '', 1, null, 13, 6],
+      [1, 2, 'textarea', 'mother_office', '12. e. Name of the Office & Address (Mother)', '', 1, null, 14, 6],
+      [1, 2, 'text', 'father_mobile', '12. f. Mobile & Land Line No. (Father)', '', 1, null, 15, 6],
+      [1, 2, 'text', 'mother_mobile', '12. f. Mobile & Land Line No. (Mother)', '', 1, null, 16, 6],
+      [1, 2, 'text', 'father_income', '12. g. Monthly Income (Father)', '', 1, null, 17, 6],
+      [1, 2, 'text', 'mother_income', '12. g. Monthly Income (Mother)', '', 1, null, 18, 6],
+      [1, 2, 'text', 'father_aadhaar', '12. h. Aadhaar Card No. (Father)', '', 1, null, 19, 6],
+      [1, 2, 'text', 'mother_aadhaar', '12. h. Aadhaar Card No. (Mother)', '', 1, null, 20, 6],
+
+      // Step 3: Schooling & Connections
+      [1, 3, 'text', 'mcc_staff_details', '12. h. If Staff at MCC (Dept/Unit/School)', 'Details if applicable', 0, null, 1, 12],
+      [1, 3, 'text', 'alumni_details', '12. i. If Alumni of Campus School (Name & Year)', 'Details if applicable', 0, null, 2, 12],
+      [1, 3, 'text', 'sibling_details', '12. j. If sibling studying in Campus School (Name & Std)', 'Details if applicable', 0, null, 3, 12],
+      [1, 3, 'text', 'prev_school', '13. Mention the name of the School studied earlier', '', 0, null, 4, 12],
+      [1, 3, 'text', 'prev_class', '13. a. Class', '', 0, null, 5, 4],
+      [1, 3, 'text', 'prev_year', '13. b. Year', '', 0, null, 6, 4],
+      [1, 3, 'text', 'emis_no', '13. c. EMIS No.', '', 0, null, 7, 4],
+
+      // Step 4: Health & Identity
+      [1, 4, 'text', 'id_mark_1', '14. Identification marks (1)', '', 1, null, 1, 12],
+      [1, 4, 'text', 'id_mark_2', '(2)', '', 1, null, 2, 12],
+      [1, 4, 'textarea', 'medical_history', '15. Previous Medical History (eg. Asthma, Allergies, Fits, Surgery, etc.)', '', 0, null, 3, 12]
     ];
 
     [...xiFields, ...lkgFields].forEach(f => insertField.run(...f));
   }
 } catch (e) { console.error('Seeding error:', e); }
-
-
 
 // Seed default admin
 const adminExists = db.prepare('SELECT id FROM admins WHERE username = ?').get('mccmrfadmin');
@@ -176,6 +215,7 @@ if (!adminExists) {
   const hashed = bcrypt.hashSync('admin1234', 10);
   db.prepare('INSERT INTO admins (username, password, name) VALUES (?, ?, ?)').run('mccmrfadmin', hashed, 'MCC Admin');
 }
+
 
 // Middleware
 app.use(express.json());
