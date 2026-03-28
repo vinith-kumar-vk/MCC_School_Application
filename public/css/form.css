@@ -1,5 +1,5 @@
 /* ─── MCC-MRF ULTRA-PREMIUM SPLIT LAYOUT FORM CSS ─── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
 :root {
   --mcc-maroon: #751421;
@@ -20,7 +20,7 @@ html {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   background-color: var(--bg-main);
   color: var(--text-primary);
   overflow: hidden;
@@ -31,10 +31,13 @@ h1,
 h2,
 h3,
 h4,
-.sidebar-brand-name {
-  font-family: 'Outfit', sans-serif;
+.sidebar-brand-name,
+.step-title,
+.nav-label {
+  font-family: "Times New Roman", Sans-serif;
   font-weight: 700;
 }
+
 
 /* Layout Wrapper */
 .premium-wrapper {

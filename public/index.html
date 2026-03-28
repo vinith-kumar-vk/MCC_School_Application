@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCC Campus School - Admissions</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         :root {
-            --primary: #800000;
-            --primary-light: #a01a1a;
-            --secondary: #2d3436;
+            --primary: #78091E;
+            --theme-color: #78091E;
+            --secondary: #0F1B31;
             --accent: #ffd700;
-            --bg: #f8f9fa;
-            --card-bg: #ffffff;
-            --text: #2d3436;
-            --text-muted: #636e72;
-            --radius: 12px;
-            --shadow: 0 10px 30px rgba(0,0,0,0.08);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --white-color: #ffffff;
+            --title-font: "Times New Roman", Sans-serif;
+            --body-font: 'Roboto', sans-serif;
+            --radius: 5px;
+            --shadow: 0px 6px 16px rgba(13, 94, 244, 0.24);
+            --transition: all 0.3s ease;
         }
 
         * {
@@ -29,20 +30,29 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: var(--body-font);
+            background-color: #f8f9fa;
+            color: #2d3436;
             line-height: 1.6;
-            overflow-x: hidden;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .th-title {
+            font-family: var(--title-font);
         }
 
         header {
-            background: #78091E;
+            background: var(--primary);
             padding: 1rem 5%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -51,213 +61,307 @@
         .logo-area {
             display: flex;
             align-items: center;
-            gap: 15px;
         }
 
         .logo-area img {
-            height: 60px;
+            height: 90px;
             width: auto;
-            mix-blend-mode: screen; /* Makes black background transparent for the white logo */
-        }
-
-
-        .school-name h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.3rem;
-            color: #ffffff;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            font-weight: 700;
-        }
-
-        .school-name p {
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.8);
-            letter-spacing: 0.3px;
+            mix-blend-mode: screen;
         }
 
         .hero {
-            height: calc(100vh - 80px);
+            position: relative;
             min-height: 600px;
-            background: linear-gradient(135deg, rgba(120, 9, 30, 0.9), rgba(15, 27, 49, 0.9)), 
-                        url('https://images.unsplash.com/photo-1523050853064-896899e4f16b?auto=format&fit=crop&q=80&w=2000');
+            background: url('/images/hero_bg.jpg') no-repeat center center;
             background-size: cover;
-            background-position: center;
             display: flex;
             align-items: center;
             justify-content: center;
+            /* Centered content as per latest image */
             text-align: center;
             color: white;
-            padding: 2rem;
-            position: relative;
+            padding: 80px 5%;
         }
 
-        .hero::after {
+        .hero::before {
             content: '';
             position: absolute;
-            bottom: 0;
+            top: 0;
             left: 0;
             width: 100%;
-            height: 100px;
-            background: linear-gradient(transparent, var(--bg));
+            height: 100%;
+            background-color: #0f172a;
+            /* Darker navy as per image */
+            opacity: 0.82;
+            z-index: 1;
         }
 
         .hero-content {
-            max-width: 900px;
-            animation: fadeIn 1s ease-out;
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            animation: fadeIn 1.2s ease-out;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .hero h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 3.5rem;
+        .welcome-text {
+            color: var(--white-color);
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            display: block;
+        }
+
+        .hero-title {
+            font-size: 62px;
+            line-height: 1.1;
             font-weight: 800;
-            margin-bottom: 1.5rem;
-            line-height: 1.2;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            color: #ffffff;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
         }
 
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 3rem;
-            opacity: 0.9;
-            max-width: 700px;
+        .text-theme {
+            color: rgb(146, 26, 42);
+            /* Requested Maroon color */
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .hero-desc {
+            font-size: 1.15rem;
+            margin-bottom: 50px;
+            max-width: 800px;
             margin-left: auto;
             margin-right: auto;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            opacity: 0.95;
+            color: #ffffff;
+            font-weight: 400;
+            line-height: 1.8;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .button-group {
             display: flex;
-            gap: 20px;
+            gap: 25px;
             justify-content: center;
+            /* Centered buttons */
             flex-wrap: wrap;
         }
 
         .btn {
-            padding: 18px 36px;
-            border-radius: var(--radius);
-            font-weight: 700;
-            text-decoration: none;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9rem;
-            transition: var(--transition);
+            position: relative;
+            z-index: 2;
+            overflow: hidden;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             border: none;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 18px 45px;
+            font-weight: 700;
+            font-size: 0.9rem;
             cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--title-font);
+            border-radius: 5px;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            background-color: rgb(146, 26, 42);
+            color: #ffffff;
+            box-shadow: 0px 8px 18px rgba(0, 0, 0, 0.2);
         }
 
-        .btn-primary {
-            background-color: var(--accent);
-            color: var(--secondary);
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
-        }
-
-        .btn-primary:hover {
-            background-color: #f7ca00;
+        .btn:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+            background-color: #800000;
+            box-shadow: 0px 12px 25px rgba(0, 0, 0, 0.3);
+            color: #ffffff;
         }
 
-        .btn-white {
-            background-color: white;
-            color: #78091E;
-        }
 
-        .btn-white:hover {
-            background-color: #f0f0f0;
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
-        }
 
         footer {
             background: #0F1B31;
+            /* Reverted to Dark Navy as requested */
             color: white;
-            padding: 4rem 5% 2rem;
-            text-align: center;
+            padding: 2rem 5%;
         }
+
 
 
         .footer-content {
-            max-width: 1200px;
+
             margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            /* Align to bottom for a solid baseline */
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-left {
+            flex: 0 0 45%;
+            text-align: left;
+        }
+
+        .footer-right {
+            flex: 0 0 45%;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-width: max-content;
         }
 
         .footer-logo img {
-            height: 80px;
-            margin-bottom: 1.5rem;
-            mix-blend-mode: screen; /* Transparency for white-on-black logo */
+            height: 60px;
+            margin-bottom: 20px;
+            mix-blend-mode: screen;
         }
 
+        .footer-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.3;
+            color: #ffffff;
+        }
+
+        .footer-info-text {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin: 0;
+            line-height: 1.5;
+        }
 
         .copyright {
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            font-size: 0.9rem;
-            opacity: 0.6;
+            width: 100%;
+            margin-top: 50px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.8rem;
+            opacity: 0.5;
+            text-align: center;
         }
 
         @media (max-width: 768px) {
-            .hero h1 { font-size: 2.2rem; }
-            .hero p { font-size: 1rem; }
-            .btn { width: 100%; justify-content: center; }
+            .footer-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .footer-left,
+            .footer-right {
+                flex: 0 0 100%;
+                text-align: center;
+            }
+
+            .footer-right {
+                margin-top: 30px;
+            }
+
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero {
+                min-height: 600px;
+            }
+
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
+
+
 <body>
 
     <header>
         <div class="logo-area">
-            <img src="/images/logo.png" alt="MCC Logo" onerror="this.src='https://via.placeholder.com/60?text=MCC'">
-            <div class="school-name">
-                <h1>MCC Campus School</h1>
-                <p>East Tambaram, Chennai</p>
-            </div>
+            <img src="/images/logo.png" alt="MCC Shield" style="height: 60px; width: auto;"
+                onerror="this.src='/images/logo.png'">
         </div>
         <div class="nav-links">
-            <a href="/login.html" class="btn" style="padding: 10px 24px; font-size: 0.85rem; border: 1.5px solid rgba(255,255,255,0.4); color: white; background: rgba(255,255,255,0.1); backdrop-filter: blur(5px);">Admin Login</a>
+            <a href="/login.html" class="btn" style="padding: 10px 24px;
+    font-size: 0.8rem;
+    background: #fff;
+    color: #000;
+    border: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);">ADMIN
+                LOGIN</a>
         </div>
     </header>
 
 
+
+
     <section class="hero">
         <div class="hero-content">
-            <h1>Excellence in Education Since 1991</h1>
-            <p>Empowering minds, fostering character, and building futures. Choose the right path for your child's growth with MCC Campus Matriculation Higher Secondary School.</p>
-            
+            <span class="welcome-text">WELCOME</span>
+            <h1 class="hero-title th-title">
+                <span class="text-theme">MCC CAMPUS</span> Matriculation Higher Secondary School
+            </h1>
+            <p class="hero-desc">MCC Campus Matriculation Higher Secondary School traces its root as Campus Primary
+                School in the premises of MCC in 1985. It is recognized by the Government of Tamil Nadu Matriculation
+                Board of Education.</p>
+
+
             <div class="button-group">
-                <a href="/form.html?formId=1" class="btn btn-primary">
-                    LKG to CLASS X ADMISSION
+                <a href="/form.html?formId=1" class="btn">
+                    LKG to CLASS X ADMISSION &nbsp; <i class="fa-solid fa-arrow-right"></i>
                 </a>
-                <a href="/form.html?formId=2" class="btn btn-white">
-                    CLASS XI & XII ADMISSION
+                <a href="/form.html?formId=2" class="btn">
+                    CLASS XI & XII ADMISSION &nbsp; <i class="fa-solid fa-arrow-right"></i>
                 </a>
             </div>
         </div>
     </section>
 
+
+
     <footer>
         <div class="footer-content">
-            <div class="footer-logo">
-                <img src="/images/logo.png" alt="MCC Logo" onerror="this.src='https://via.placeholder.com/80?text=MCC'">
+            <div class="footer-left">
+                <div class="footer-logo">
+                    <img src="/images/logo.png" alt="MCC Shield" onerror="this.src='/images/logo.png'">
+                </div>
+                <div class="footer-title th-title">
+                    MCC Campus Matriculation <br> Higher Secondary School
+                </div>
             </div>
-            <h3>MCC Campus Matriculation Higher Secondary School</h3>
-            <p>#1, Air Force Road, East Tambaram, Chennai - 600059</p>
-            <p>Ph: 044-2239 1620 | Email: mcccampus.school91@gmail.com</p>
-            
+            <div class="footer-right">
+                <p class="footer-info-text">#1, Air Force Road, East Tambaram,<br> Chennai - 600059</p>
+                <p class="footer-info-text">Ph: 044-2239 1620</p>
+                <p class="footer-info-text">Email: mcccampus.school91@gmail.com</p>
+            </div>
+
             <div class="copyright">
                 &copy; 2026 MCC Campus Matriculation Higher Secondary School. All rights reserved.
             </div>
         </div>
     </footer>
 
+
+
+
+
 </body>
+
 </html>

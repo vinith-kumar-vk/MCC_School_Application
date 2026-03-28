@@ -1,5 +1,5 @@
 /* ─── MCC-MRF DASHBOARD CSS (PIXEL-PERFECT) ─── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
 *,
 *::before,
@@ -22,12 +22,17 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   background-color: var(--main-bg);
   color: var(--text-main);
   display: flex;
   min-height: 100vh;
 }
+
+h1, h2, h3, h4, .sb-brand-name, .page-title, .stat-label {
+  font-family: "Times New Roman", Sans-serif;
+}
+
 
 /* ───────── SIDEBAR ───────── */
 .sidebar {
