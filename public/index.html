@@ -61,11 +61,13 @@
         .logo-area {
             display: flex;
             align-items: center;
+            max-width: 200px;
         }
 
         .logo-area img {
-            height: 90px;
-            width: auto;
+
+            width: 100%;
+            height: 100%;
             mix-blend-mode: screen;
         }
 
@@ -126,20 +128,21 @@
         }
 
         .hero-title {
-            font-size: 62px;
-            line-height: 1.1;
+            font-size: 50px;
+            line-height: 1.2;
             font-weight: 800;
             margin-bottom: 25px;
             color: #ffffff;
+
             text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
         }
 
         .text-theme {
-            color: rgb(146, 26, 42);
-            /* Requested Maroon color */
+            color: #78091E;
             display: block;
             margin-bottom: 10px;
         }
+
 
         .hero-desc {
             font-size: 1.15rem;
@@ -228,9 +231,13 @@
             max-width: max-content;
         }
 
+        .footer-logo {
+            max-width: 200px;
+        }
+
         .footer-logo img {
-            height: 60px;
-            margin-bottom: 20px;
+            width: 100%;
+
             mix-blend-mode: screen;
         }
 
@@ -295,8 +302,7 @@
 
     <header>
         <div class="logo-area">
-            <img src="/images/logo.png" alt="MCC Shield" style="height: 60px; width: auto;"
-                onerror="this.src='/images/logo.png'">
+            <img src="/images/logo.png" alt="MCC Shield" onerror="this.src='/images/logo.png'">
         </div>
         <div class="nav-links">
             <a href="/login.html" class="btn" style="padding: 10px 24px;
@@ -318,7 +324,8 @@
             <h1 class="hero-title th-title" id="dynamicHeroTitle">
                 <span class="text-theme">MCC CAMPUS</span> Matriculation Higher Secondary School
             </h1>
-            <p class="hero-desc" id="dynamicHeroDesc">MCC Campus Matriculation Higher Secondary School traces its root as Campus Primary
+            <p class="hero-desc" id="dynamicHeroDesc">MCC Campus Matriculation Higher Secondary School traces its root
+                as Campus Primary
                 School in the premises of MCC in 1985. It is recognized by the Government of Tamil Nadu Matriculation
                 Board of Education.</p>
 
@@ -365,7 +372,7 @@
             try {
                 const res = await fetch('/api/settings?t=' + Date.now());
                 const s = await res.json();
-                
+
                 // Update Logos
                 if (s.logo_path) {
                     document.querySelectorAll('img[src="/images/logo.png"]').forEach(img => {
@@ -381,7 +388,7 @@
                 const brandTitles = document.querySelectorAll('.footer-title, .header-brand-title');
                 if (s.site_title) {
                     brandTitles.forEach(el => el.textContent = s.site_title);
-                    
+
                     // Update Hero Title
                     const heroTitle = document.getElementById('dynamicHeroTitle');
                     if (heroTitle && s.landing_title) {

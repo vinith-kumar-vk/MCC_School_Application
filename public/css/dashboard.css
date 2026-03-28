@@ -10,11 +10,12 @@
 }
 
 :root {
-  --sb-bg: #400d0d;
-  --sb-bg-hover: #350b0b;
-  --sb-active: #581c1c;
+  --sb-bg: #78091E;
+  --sb-bg-hover: #67081a;
+  --sb-active: #590716;
   --sb-width: 240px;
   --main-bg: #f8f9fa;
+
   --text-main: #1a1a1a;
   --text-muted: #6c757d;
   --border-light: #f3f4f6;

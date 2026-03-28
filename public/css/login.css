@@ -33,7 +33,10 @@ body {
   background: #f1f5f9;
 }
 
-h1, h2, h3, .brand-title {
+h1,
+h2,
+h3,
+.brand-title {
   font-family: "Times New Roman", Sans-serif;
 }
 
@@ -82,8 +85,8 @@ h1, h2, h3, .brand-title {
 .login-brand {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 56px;
+
+  margin-bottom: 30px;
 }
 
 .login-logo {
