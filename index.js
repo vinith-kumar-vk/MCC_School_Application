@@ -103,10 +103,14 @@ defaultSettings.forEach(s => insertSetting.run(s.key, s.value));
 try {
   const formCount = db.prepare('SELECT COUNT(*) as c FROM forms').get().c;
   if (formCount === 0) {
-    db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS Lkg to X)', 'LKG to X Admission Form');
+    db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS LKG to X)', 'LKG to X Admission Form');
     db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS XI to XII)', 'XI and XII Admission Form');
+  } else {
+    // Fix existing DB record if it has old 'Lkg' casing
+    db.prepare("UPDATE forms SET name = 'APPLICATION FOR ADMISSION (CLASS LKG to X)' WHERE name LIKE '%Lkg%'").run();
   }
 } catch (e) { console.error('Form seeding error:', e); }
+
 
 // Seed default form fields ONLY if table is empty (no wipe on restart)
 try {

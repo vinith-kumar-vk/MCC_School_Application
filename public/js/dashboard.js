@@ -321,9 +321,10 @@ function viewDetail(id) {
   body.innerHTML = '<div style="text-align:center; padding:50px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:32px; color:maroon;"></i><p style="margin-top:10px; color:#64748b;">Loading...</p></div>';
   modal.classList.add('active');
 
-  fetch(`/api/applications/${id}`).then(r => r.json()).then(app => {
-    const d = app.form_data || {};
-    document.getElementById('modalTitle').textContent = "PUPIL DETAIL - " + (d.pupil_name || '').toUpperCase();
+    fetch(`/api/applications/${id}`).then(r => r.json()).then(app => {
+      window.currentAppPrintData = app; // Save for PDF generation
+      const d = app.form_data || {};
+      document.getElementById('modalTitle').textContent = "PUPIL DETAIL - " + (d.pupil_name || '').toUpperCase();
 
     let html = `
       <div style="background: #fff; border-radius: 12px; margin-bottom: 24px;">
@@ -376,44 +377,188 @@ async function updateStatus(id, status) {
   } catch(e) { showToast('Update failed'); }
 }
 
+// Helper tool to safely fetch an image and convert it to Base64 to bypass CORS/html2canvas blocking
+async function getBase64ImageFromUrl(imageUrl) {
+  try {
+    const res = await fetch(imageUrl);
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    return null;
+  }
+}
+
 async function printApplicationPDF() {
-  const body = id('modalBody');
-  if (!body) return;
+  if (!window.currentAppPrintData) return showToast('No data to print. Please refresh application.');
+  
+  // Show loading indicator since base64 conversion might take half a second
+  showToast('Generating Premium PDF...');
+  
+  const app = window.currentAppPrintData;
+  const d = app.form_data || {};
+  
+  const safeName = String(app.serial_no || app.id).replace(/[^a-zA-Z0-9]/g, '_');
+  const baseUrl = window.location.origin;
+
+  // 1. Process Images to Base64 (Guarantees they appear in the PDF)
+  let logoUrl = id('logoPreview')?.src || (baseUrl + '/images/logo.png');
+  if (logoUrl.startsWith('/')) logoUrl = baseUrl + logoUrl;
+  const logoBase64 = await getBase64ImageFromUrl(logoUrl) || logoUrl;
+
+  let photoBase64 = null;
+  if (app.photograph_path) {
+    let pUrl = app.photograph_path.startsWith('/') ? baseUrl + app.photograph_path : app.photograph_path;
+    photoBase64 = await getBase64ImageFromUrl(pUrl);
+  }
+
+  // 2. Setup PDF Engine Options
   const opt = {
-    margin: [15, 15],
-    filename: `Application_${Date.now()}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    margin: [12, 12, 12, 12],
+    filename: `Application_Record_${safeName}.pdf`,
+    image: { type: 'jpeg', quality: 1.0 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css'] }
   };
 
-  // Create clean clone for PDF
   const printDiv = document.createElement('div');
-  printDiv.style.padding = '20px';
-  printDiv.style.fontFamily = '"Times New Roman", serif';
+  printDiv.style.padding = '0';
+  printDiv.style.fontFamily = '"Times New Roman", Times, serif'; // Classic official school font
+  printDiv.style.color = '#000';
+  printDiv.style.width = '100%';
 
-  // Logo & Header
-  const logo = id('logoPreview')?.src || '/images/logo.png';
   const siteTitle = id('set_site_title')?.value || 'MCC Campus Matriculation Higher Secondary School';
   
+  // 3. Generate Applicant Details Table
+  let fieldsHtml = '<table style="width:100%; border-collapse:collapse; margin-bottom:25px; border: 1.5px solid #000;">';
+  for (const [key, val] of Object.entries(d)) {
+    if (key === 'pupil_name') continue; // pupil_name is uniquely placed
+    fieldsHtml += `
+      <tr style="page-break-inside: avoid;">
+        <td style="padding:10px 15px; width:45%; border:1px solid #cbd5e1; font-size:10.5pt; font-weight:bold; color:#333; text-transform:uppercase; background:#f8fafc;">
+           ${esc(key.replace(/_/g, ' '))}
+        </td>
+        <td style="padding:10px 15px; width:55%; border:1px solid #cbd5e1; font-size:11pt; color:#000; font-family:'Arial', sans-serif;">
+           ${esc(val) || '—'}
+        </td>
+      </tr>
+    `;
+  }
+  fieldsHtml += '</table>';
+
+  const photoHtml = photoBase64 
+    ? `<img src="${photoBase64}" style="width:100%; height:100%; object-fit:cover; display:block;">` 
+    : `<div style="text-align:center; padding-top:45px; color:#94a3b8; font-size:9pt; font-weight:bold; font-family:Arial, sans-serif;">PASSPORT<br>PHOTOGRAPH</div>`;
+
+  const dateStr = new Date(app.submitted_at).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+
+  // 4. Build the final HTML Structure
   printDiv.innerHTML = `
-    <div style="text-align:center; border-bottom:2px solid maroon; padding-bottom:15px; margin-bottom:20px;">
-        <img src="${logo}" style="width:70px; height:70px; margin-bottom:10px;">
-        <h1 style="color:maroon; margin:0; font-size:20pt;">${siteTitle}</h1>
-        <p style="margin:5px 0; font-size:10pt; color:#666;">Official Admission Application Record</p>
-    </div>
-    <div style="font-size:12pt; line-height:1.6;">
-        ${body.innerHTML}
-    </div>
-    <div style="margin-top:40px; border-top:1px solid #eee; padding-top:10px; font-size:9pt; text-align:center; color:#999;">
-        Document generated on: ${new Date().toLocaleString()}
+    <!-- MAIN APPLICATION WRAPPER with Border -->
+    <div style="background:#fff; width:100%; box-sizing:border-box; border: 2px solid #78091E; padding: 25px; border-radius: 4px;">
+      
+      <!-- TRADITIONAL CENTERED HEADER -->
+      <table style="width:100%; margin-bottom:15px; border-bottom:3px solid #78091E; padding-bottom:15px;">
+        <tr>
+          <!-- Column 1: Logo -->
+          <td style="width:115px; min-width:115px; text-align:left; vertical-align:middle;">
+             <div style="background-color:#78091E; border-radius:10px; width:95px; height:95px; line-height:95px; text-align:center; overflow:hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <img src="${logoBase64}" style="max-width:70px; max-height:70px; width:auto; height:auto; object-fit:contain; vertical-align:middle; display:inline-block;">
+             </div>
+          </td>
+          
+          <!-- Column 2: Centered Title -->
+          <td style="text-align:center; vertical-align:middle; padding:0 20px;">
+             <h1 style="color:#78091E; margin:0 0 6px 0; line-height:1.2; font-size:18pt; font-weight:900; text-transform:uppercase; font-family:'Times New Roman', serif;">${siteTitle}</h1>
+             <div style="font-size:12.5pt; font-weight:bold; letter-spacing:0.5px; color:#000; text-transform:uppercase; font-family:Arial, sans-serif;">
+                ${esc(app.form_name)}
+             </div>
+          </td>
+          
+          <!-- Column 3: Spacer for perfect centering -->
+          <td style="width:115px; min-width:115px;"></td>
+        </tr>
+      </table>
+
+      <!-- APPLICANT HIGHLIGHT ROW & PHOTO -->
+      <table style="width:100%; margin-bottom:25px; page-break-inside: avoid; border-collapse: collapse;">
+        <tr>
+          <td style="vertical-align:top; padding-right:25px;">
+             <div style="margin-bottom:20px;">
+                <div style="font-size:9.5pt; color:#555; font-weight:bold; margin-bottom:5px; text-transform:uppercase; font-family:Arial, sans-serif;">Name of the Applicant</div>
+                <div style="font-size:18pt; font-weight:900; color:#78091E; text-transform:uppercase; font-family:Arial, sans-serif; letter-spacing: 0.5px;">
+                   ${esc(d.pupil_name || 'N/A')}
+                </div>
+             </div>
+             
+             <table style="width:100%; border-collapse: collapse; font-family:Arial, sans-serif;">
+                <tr>
+                   <td style="width:33%; vertical-align:top;">
+                      <div style="font-size:9pt; color:#555; font-weight:bold; margin-bottom:4px; text-transform:uppercase;">Serial No</div>
+                      <div style="font-size:12pt; font-weight:900; color:#1e293b;">
+                         ${app.serial_no || app.id}
+                      </div>
+                   </td>
+                   <td style="width:33%; vertical-align:top;">
+                      <div style="font-size:9pt; color:#555; font-weight:bold; margin-bottom:4px; text-transform:uppercase;">Admission Status</div>
+                      <div style="font-size:12pt; font-weight:900; color: ${app.status==='Approved' ? '#059669' : (app.status==='Rejected' ? '#dc2626' : '#d97706')}; text-transform:uppercase;">
+                         ${app.status}
+                      </div>
+                   </td>
+                   <td style="width:34%; vertical-align:top;">
+                      <div style="font-size:9pt; color:#555; font-weight:bold; margin-bottom:4px; text-transform:uppercase;">Application Date</div>
+                      <div style="font-size:11pt; font-weight:bold; color:#000;">
+                         ${dateStr}
+                      </div>
+                   </td>
+                </tr>
+             </table>
+          </td>
+          
+          <td style="width:130px; vertical-align:top; text-align:right;">
+             <div style="width:125px; height:155px; border:1px solid #000; background:#fff; padding:3px; display:block; box-shadow: 2px 2px 0px #ccc;">
+                ${photoHtml}
+             </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- DETAILED FIELDS SECTION -->
+      <div style="margin-bottom:30px;">
+         <div style="background:#78091E; color:#fff; font-size:12pt; font-weight:bold; padding:8px 15px; margin-bottom:1px; text-transform:uppercase; font-family:Arial, sans-serif;">Applicant Details</div>
+         ${fieldsHtml}
+      </div>
+
+      <!-- DECLARATION & SIGNATURES -->
+      <div style="page-break-inside: avoid; margin-top:20px;">
+         <div style="font-size:10pt; color:#000; line-height:1.6; text-align:justify; margin-bottom:60px; font-family:Arial, sans-serif;">
+            <strong style="color:#78091E;">DECLARATION:</strong> I hereby declare that all the information provided in this application form is true, complete, and correct to the best of my knowledge and belief. I understand that any discrepancy or false information will render this application invalid and subject to cancellation of admission under the sole discretion of the management.
+         </div>
+         
+         <table style="width:100%; margin-top:20px; font-family:Arial, sans-serif;">
+            <tr>
+               <td style="width:33%; text-align:left; vertical-align:bottom;">
+                  <div style="border-top:1px solid #000; padding-top:8px; font-size:10pt; font-weight:bold; color: #000; display:inline-block; width:180px; text-align:center;">Candidate Signature</div>
+               </td>
+               <td style="width:34%; text-align:center; vertical-align:bottom;">
+                  <div style="border-top:1px solid #000; padding-top:8px; font-size:10pt; font-weight:bold; color: #000; display:inline-block; width:180px; text-align:center;">Parent/Guardian Signature</div>
+               </td>
+               <td style="width:33%; text-align:right; vertical-align:bottom;">
+                  <div style="border-top:1px solid #000; padding-top:8px; font-size:10pt; font-weight:bold; color: #000; display:inline-block; width:180px; text-align:center;">Principal Signature / Seal</div>
+               </td>
+            </tr>
+         </table>
+      </div>
+
     </div>
   `;
 
-  // Remove buttons from printDiv clone
-  printDiv.querySelectorAll('button').forEach(b => b.remove());
-
-  html2pdf().set(opt).from(printDiv).save();
+  html2pdf().set(opt).from(printDiv).save(opt.filename);
 }
 
 async function exportToExcel() {
