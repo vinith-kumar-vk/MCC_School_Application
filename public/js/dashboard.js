@@ -141,11 +141,12 @@ async function loadSiteSettings() {
   try {
     const res = await fetch('/api/settings?t=' + Date.now());
     const s = await res.json();
-    const fields = ['site_title','site_subtitle','site_location','site_contact','landing_title','form_title','form_subtitle','footer_text'];
+    const fields = ['site_title','site_subtitle','site_location','site_contact','landing_title','form_title','form_subtitle','footer_text','btn1_label','btn2_label','form1_title','form2_title'];
     fields.forEach(f => { if(id('set_'+f)) id('set_'+f).value = s[f] || ''; });
     if(id('logoPreview') && s.logo_path) id('logoPreview').src = s.logo_path + '?t=' + Date.now();
   } catch (e) { console.error('Settings load error', e); }
 }
+
 
 async function saveBrandSettings() {
   const p = { 
@@ -163,15 +164,21 @@ async function saveLandingPageSettings() {
     site_subtitle: id('set_site_subtitle').value,
     landing_title: id('set_landing_title').value,
     form_subtitle: id('set_form_subtitle').value,
-    footer_text: id('set_footer_text').value
+    footer_text: id('set_footer_text').value,
+    btn1_label: id('set_btn1_label').value,
+    btn2_label: id('set_btn2_label').value
   };
   await saveSettings(p);
 }
 
 async function saveFormGlobalSettings() {
-  const p = { form_title: id('set_form_title').value };
+  const p = { 
+    form1_title: id('set_form1_title').value,
+    form2_title: id('set_form2_title').value
+  };
   await saveSettings(p);
 }
+
 
 async function saveSettings(p) {
   try {

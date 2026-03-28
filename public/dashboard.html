@@ -279,10 +279,6 @@
           </div>
         </div>
         <div class="cms-field">
-          <label>School Name (Header/Footer)</label>
-          <input type="text" id="set_site_title" class="cms-input" placeholder="e.g. MCC CAMPUS MATRICULATION SCHOOL">
-        </div>
-        <div class="cms-field">
           <label>School Address / Location</label>
           <input type="text" id="set_site_location" class="cms-input" placeholder="#1, Air Force Road...">
         </div>
@@ -304,16 +300,27 @@
         </div>
         <div class="cms-field">
           <label>Banner Main Title (H1)</label>
-          <input type="text" id="set_landing_title" class="cms-input" placeholder="e.g. EXCELLENCE IN EDUCATION">
+          <input type="text" id="set_landing_title" class="cms-input" placeholder="e.g. MCC CAMPUS...">
         </div>
         <div class="cms-field">
           <label>Banner Description (Paragraph)</label>
           <textarea id="set_form_subtitle" class="cms-input" rows="4"
             placeholder="Briefly describe the school..."></textarea>
         </div>
+        <div class="cms-field" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="cms-field" style="margin:0;">
+            <label>Button 1 Label <span style="color:#8B1A2E; font-size:11px;">(Form 1 – LKG–X)</span></label>
+            <input type="text" id="set_btn1_label" class="cms-input" placeholder="e.g. LKG to CLASS X ADMISSION">
+          </div>
+          <div class="cms-field" style="margin:0;">
+            <label>Button 2 Label <span style="color:#8B1A2E; font-size:11px;">(Form 2 – XI–XII)</span></label>
+            <input type="text" id="set_btn2_label" class="cms-input" placeholder="e.g. CLASS XI & XII ADMISSION">
+          </div>
+        </div>
         <div class="cms-field">
           <label>Footer Copyright Notice</label>
-          <input type="text" id="set_footer_text" class="cms-input" placeholder="© 2026 MCC Campus School">
+          <input type="text" id="set_footer_text" class="cms-input"
+            placeholder="Copyright © 2024 MCC– Campus Matriculation Higher Secondary School">
         </div>
         <button class="cms-save-btn" onclick="saveLandingPageSettings()"><i class="fa-solid fa-floppy-disk"></i> Save
           Landing Page</button>
@@ -323,14 +330,22 @@
       <div class="cms-card" style="grid-column: 1 / -1;">
         <div class="cms-card-title"><i class="fa-solid fa-file-invoice" style="color:#8B1A2E;"></i> Admission Form
           Header</div>
-        <div class="cms-field">
-          <label>Global Form Title (Shows on Form Pages)</label>
-          <input type="text" id="set_form_title" class="cms-input" placeholder="APPLICATION FOR ADMISSION">
+        <p style="font-size:12px; color:#64748b; margin-bottom:18px;">Set individual titles for each admission form.
+          These titles appear on the respective public form pages.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div class="cms-field" style="margin:0;">
+            <label>Form 1 Title <span style="color:#8B1A2E; font-size:11px;">(LKG to Class X)</span></label>
+            <input type="text" id="set_form1_title" class="cms-input"
+              placeholder="APPLICATION FOR ADMISSION (LKG to X)">
+          </div>
+          <div class="cms-field" style="margin:0;">
+            <label>Form 2 Title <span style="color:#8B1A2E; font-size:11px;">(Class XI to XII)</span></label>
+            <input type="text" id="set_form2_title" class="cms-input"
+              placeholder="APPLICATION FOR ADMISSION (CLASS XI to XII)">
+          </div>
         </div>
-        <p style="font-size:12px; color:#64748b; margin-top:-10px;">Note: Change this to update the title seen by
-          students on all forms.</p>
-        <button class="cms-save-btn" onclick="saveFormGlobalSettings()" style="margin-top:15px;"><i
-            class="fa-solid fa-floppy-disk"></i> Save Form Title</button>
+        <button class="cms-save-btn" onclick="saveFormGlobalSettings()" style="margin-top:20px;"><i
+            class="fa-solid fa-floppy-disk"></i> Save Form Titles</button>
       </div>
     </div>
 

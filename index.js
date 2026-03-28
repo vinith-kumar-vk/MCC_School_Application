@@ -85,10 +85,14 @@ const defaultSettings = [
   { key: 'site_location', value: '#1, Air Force Road, East Tambaram, Chennai - 600059' },
   { key: 'site_contact', value: '044-2239 1620 | mcccampus.school91@gmail.com' },
   { key: 'form_title', value: 'APPLICATION FOR ADMISSION (CLASS XI to XII)' },
+  { key: 'form1_title', value: 'APPLICATION FOR ADMISSION (LKG to X)' },
+  { key: 'form2_title', value: 'APPLICATION FOR ADMISSION (CLASS XI to XII)' },
   { key: 'form_subtitle', value: 'MCC Campus Matriculation Higher Secondary School traces its root as Campus Primary School in the premises of MCC in 1985. It is recognized by the Government of Tamil Nadu Matriculation Board of Education.' },
   { key: 'logo_path', value: '/images/logo.png' },
   { key: 'landing_title', value: 'MCC CAMPUS Matriculation Higher Secondary School' },
-  { key: 'footer_text', value: '2026 MCC Campus Matriculation Higher Secondary School' }
+  { key: 'footer_text', value: 'Copyright © 2024 MCC– Campus Matriculation Higher Secondary School' },
+  { key: 'btn1_label', value: 'LKG to CLASS X ADMISSION' },
+  { key: 'btn2_label', value: 'CLASS XI & XII ADMISSION' }
 ];
 
 

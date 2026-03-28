@@ -37,8 +37,10 @@ async function loadFormInfo() {
     if (brandTag && s.site_subtitle) brandTag.textContent = s.site_subtitle;
     
     const ftitle = id('formTitle'); 
-    if (ftitle) ftitle.textContent = s.form_title || (currentForm ? currentForm.name : 'APPLICATION FOR ADMISSION');
-
+    if (ftitle) {
+      const perFormTitle = formId == 1 ? s.form1_title : s.form2_title;
+      ftitle.textContent = perFormTitle || s.form_title || (currentForm ? currentForm.name : 'APPLICATION FOR ADMISSION');
+    }
     
     const fsub = id('formSubtitle'); 
     if (fsub) fsub.textContent = currentForm ? currentForm.description : s.form_subtitle;
