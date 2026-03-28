@@ -139,24 +139,37 @@ async function checkAuth() {
 
 async function loadSiteSettings() {
   try {
-    const res = await fetch('/api/settings');
+    const res = await fetch('/api/settings?t=' + Date.now());
     const s = await res.json();
-    const fields = ['site_title','site_subtitle','site_location','form_title','form_subtitle','footer_text'];
+    const fields = ['site_title','site_subtitle','site_location','site_contact','landing_title','form_title','form_subtitle','footer_text'];
     fields.forEach(f => { if(id('set_'+f)) id('set_'+f).value = s[f] || ''; });
     if(id('logoPreview') && s.logo_path) id('logoPreview').src = s.logo_path + '?t=' + Date.now();
   } catch (e) { console.error('Settings load error', e); }
 }
 
 async function saveBrandSettings() {
-  const p = { site_title: id('set_site_title').value, site_subtitle: id('set_site_subtitle').value, site_location: id('set_site_location').value };
+  const p = { 
+    site_title: id('set_site_title').value, 
+    site_location: id('set_site_location').value,
+    site_contact: id('set_site_contact').value 
+  };
   await saveSettings(p);
   if(id('sbBrandName')) id('sbBrandName').textContent = p.site_title;
-  if(id('sbBrandSub')) id('sbBrandSub').textContent = p.site_subtitle;
   if(id('sbBrandLoc')) id('sbBrandLoc').textContent = p.site_location;
 }
 
-async function saveContentSettings() {
-  const p = { form_title: id('set_form_title').value, form_subtitle: id('set_form_subtitle').value, footer_text: id('set_footer_text').value };
+async function saveLandingPageSettings() {
+  const p = {
+    site_subtitle: id('set_site_subtitle').value,
+    landing_title: id('set_landing_title').value,
+    form_subtitle: id('set_form_subtitle').value,
+    footer_text: id('set_footer_text').value
+  };
+  await saveSettings(p);
+}
+
+async function saveFormGlobalSettings() {
+  const p = { form_title: id('set_form_title').value };
   await saveSettings(p);
 }
 
@@ -164,9 +177,31 @@ async function saveSettings(p) {
   try {
     const res = await fetch('/api/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(p) });
     const data = await res.json();
-    if (data.success) showToast('Settings saved!');
+    if (data.success) { showToast('Settings saved!'); loadSiteSettings(); }
   } catch (e) { showToast('Save failed'); }
 }
+
+
+function previewLogo(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => id('logoPreview').src = e.target.result;
+  reader.readAsDataURL(file);
+}
+
+async function uploadLogo() {
+  const file = id('logoFileInput').files[0];
+  if (!file) return showToast('Please select a file');
+  const fd = new FormData();
+  fd.append('logo', file);
+  try {
+    const res = await fetch('/api/upload-logo', { method:'POST', body:fd });
+    const data = await res.json();
+    if (data.success) { showToast('Logo updated!'); loadSiteSettings(); }
+  } catch (e) { showToast('Upload failed'); }
+}
+
 
 async function loadFormFields() {
   try {
@@ -317,6 +352,46 @@ async function updateStatus(id, status) {
     const res = await fetch(`/api/applications/${id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status}) });
     if(res.ok) { showToast('Status updated!'); closeDetailModal(); loadAllUsers(); loadStats(); }
   } catch(e) { showToast('Update failed'); }
+}
+
+async function printApplicationPDF() {
+  const body = id('modalBody');
+  if (!body) return;
+  const opt = {
+    margin: [15, 15],
+    filename: `Application_${Date.now()}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  // Create clean clone for PDF
+  const printDiv = document.createElement('div');
+  printDiv.style.padding = '20px';
+  printDiv.style.fontFamily = '"Times New Roman", serif';
+
+  // Logo & Header
+  const logo = id('logoPreview')?.src || '/images/logo.png';
+  const siteTitle = id('set_site_title')?.value || 'MCC Campus Matriculation Higher Secondary School';
+  
+  printDiv.innerHTML = `
+    <div style="text-align:center; border-bottom:2px solid maroon; padding-bottom:15px; margin-bottom:20px;">
+        <img src="${logo}" style="width:70px; height:70px; margin-bottom:10px;">
+        <h1 style="color:maroon; margin:0; font-size:20pt;">${siteTitle}</h1>
+        <p style="margin:5px 0; font-size:10pt; color:#666;">Official Admission Application Record</p>
+    </div>
+    <div style="font-size:12pt; line-height:1.6;">
+        ${body.innerHTML}
+    </div>
+    <div style="margin-top:40px; border-top:1px solid #eee; padding-top:10px; font-size:9pt; text-align:center; color:#999;">
+        Document generated on: ${new Date().toLocaleString()}
+    </div>
+  `;
+
+  // Remove buttons from printDiv clone
+  printDiv.querySelectorAll('button').forEach(b => b.remove());
+
+  html2pdf().set(opt).from(printDiv).save();
 }
 
 async function exportToExcel() {

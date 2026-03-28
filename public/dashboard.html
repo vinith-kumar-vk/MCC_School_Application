@@ -267,62 +267,66 @@
         <p class="page-subtitle">Manage the school logo and application form titles.</p>
       </div>
 
-      <div class="cms-layout-grid">
-        <!-- Logo Upload -->
+        <!-- SECTION 1: GLOBAL SCHOOL IDENTITY -->
         <div class="cms-card">
-          <div class="cms-card-title"><i class="fa-solid fa-image" style="color:#8B1A2E;"></i> School Logo</div>
-          <div style="display:flex; align-items:center; gap:20px; margin-bottom:16px;">
+          <div class="cms-card-title"><i class="fa-solid fa-school" style="color:#8B1A2E;"></i> Global School Identity</div>
+          <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
             <img id="logoPreview" src="/images/logo.png" alt="Logo Preview"
               style="width:80px; height:80px; object-fit:contain; border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:6px;">
             <div>
-              <p style="font-size:13px; color:#64748b; margin-bottom:8px;">Upload school logo (max 5MB)</p>
-              <label class="cms-upload-btn" for="logoFileInput"><i class="fa-solid fa-upload"></i> Upload PNG</label>
-              <input type="file" id="logoFileInput" accept="image/*" style="display:none;"
-                onchange="previewLogo(event)">
+              <p style="font-size:13px; color:#64748b; margin-bottom:8px;">Change School Logo (Max 5MB)</p>
+              <label class="cms-upload-btn" for="logoFileInput"><i class="fa-solid fa-upload"></i> Choose PNG/JPG</label>
+              <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="previewLogo(event)">
+              <button class="cms-save-btn" onclick="uploadLogo()" style="padding:8px 16px; margin-top:8px; display:block; width:auto;"><i class="fa-solid fa-check"></i> Upload Logo</button>
             </div>
           </div>
-          <button class="cms-save-btn" onclick="uploadLogo()"><i class="fa-solid fa-floppy-disk"></i> Save Logo</button>
-        </div>
-
-        <!-- Brand Info -->
-        <div class="cms-card">
-          <div class="cms-card-title"><i class="fa-solid fa-pen-nib" style="color:#8B1A2E;"></i> School Name</div>
           <div class="cms-field">
-            <label>School Name (e.g. MCC CAMPUS)</label>
-            <input type="text" id="set_site_title" class="cms-input">
-          </div>
-          <div class="cms-field">
-            <label>Subtitle (e.g. MATRICULATION SCHOOL)</label>
-            <input type="text" id="set_site_subtitle" class="cms-input">
+            <label>School Name (Header/Footer)</label>
+            <input type="text" id="set_site_title" class="cms-input" placeholder="e.g. MCC CAMPUS MATRICULATION SCHOOL">
           </div>
           <div class="cms-field">
             <label>School Address / Location</label>
-            <input type="text" id="set_site_location" class="cms-input">
+            <input type="text" id="set_site_location" class="cms-input" placeholder="#1, Air Force Road...">
           </div>
-          <button class="cms-save-btn" onclick="saveBrandSettings()"><i class="fa-solid fa-floppy-disk"></i> Save School
-            Info</button>
+          <div class="cms-field">
+            <label>Contact Details (Ph / Email)</label>
+            <input type="text" id="set_site_contact" class="cms-input" placeholder="Ph: 044... | Email: ...">
+          </div>
+          <button class="cms-save-btn" onclick="saveBrandSettings()"><i class="fa-solid fa-floppy-disk"></i> Save School Identity</button>
         </div>
 
-        <!-- Form Page Content -->
-        <div class="cms-card" style="grid-column: 1 / -1;">
-          <div class="cms-card-title"><i class="fa-solid fa-align-left" style="color:#8B1A2E;"></i> Form Header & Footer
+        <!-- SECTION 2: LANDING PAGE CMS (BANNER & CONTENT) -->
+        <div class="cms-card">
+          <div class="cms-card-title"><i class="fa-solid fa-house-chimney" style="color:#8B1A2E;"></i> Landing Page Content</div>
+          <div class="cms-field">
+            <label>Banner Welcome Text (Above Title)</label>
+            <input type="text" id="set_site_subtitle" class="cms-input" placeholder="e.g. WELCOME TO">
           </div>
           <div class="cms-field">
-            <label>Form Title (e.g. APPLICATION FOR ADMISSION)</label>
-            <input type="text" id="set_form_title" class="cms-input">
+            <label>Banner Main Title (H1)</label>
+            <input type="text" id="set_landing_title" class="cms-input" placeholder="e.g. EXCELLENCE IN EDUCATION">
           </div>
           <div class="cms-field">
-            <label>Form Instructions (shown below title)</label>
-            <textarea id="set_form_subtitle" class="cms-input" rows="2"></textarea>
+            <label>Banner Description (Paragraph)</label>
+            <textarea id="set_form_subtitle" class="cms-input" rows="4" placeholder="Briefly describe the school..."></textarea>
           </div>
           <div class="cms-field">
-            <label>Footer Copyright Text</label>
-            <input type="text" id="set_footer_text" class="cms-input">
+            <label>Footer Copyright Notice</label>
+            <input type="text" id="set_footer_text" class="cms-input" placeholder="© 2026 MCC Campus School">
           </div>
-          <button class="cms-save-btn" onclick="saveContentSettings()"><i class="fa-solid fa-floppy-disk"></i> Save
-            Settings</button>
+          <button class="cms-save-btn" onclick="saveLandingPageSettings()"><i class="fa-solid fa-floppy-disk"></i> Save Landing Page</button>
         </div>
-      </div>
+
+        <!-- SECTION 3: ADMISSION FORM GLOBAL SETTINGS -->
+        <div class="cms-card" style="grid-column: 1 / -1;">
+          <div class="cms-card-title"><i class="fa-solid fa-file-invoice" style="color:#8B1A2E;"></i> Admission Form Header</div>
+          <div class="cms-field">
+            <label>Global Form Title (Shows on Form Pages)</label>
+            <input type="text" id="set_form_title" class="cms-input" placeholder="APPLICATION FOR ADMISSION">
+          </div>
+          <p style="font-size:12px; color:#64748b; margin-top:-10px;">Note: Change this to update the title seen by students on all forms.</p>
+          <button class="cms-save-btn" onclick="saveFormGlobalSettings()" style="margin-top:15px;"><i class="fa-solid fa-floppy-disk"></i> Save Form Title</button>
+        </div>
     </div>
 
     <!-- ── PAGE: FORM BUILDER ── -->
@@ -381,10 +385,14 @@
   <!-- Detail Modal -->
   <div class="modal-overlay" id="detailModal">
     <div class="modal">
-      <div class="modal-header" style="background: maroon; color:white;">
+      <div class="modal-header" style="background: maroon; color:white; display:flex; justify-content:space-between; align-items:center;">
         <h2 id="modalTitle" style="color:white; margin:0;">Application Detail</h2>
-        <button class="close-btn" onclick="closeDetailModal()" style="color:white; font-size:32px;">&times;</button>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <button class="btn" onclick="printApplicationPDF()" style="background:#fff; color:maroon; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+          <button class="close-btn" onclick="closeDetailModal()" style="color:white; font-size:32px; border:none; background:none;">&times;</button>
+        </div>
       </div>
+
       <div class="modal-body" id="modalBody">
         <!-- Content here -->
       </div>
@@ -493,7 +501,9 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
   <script src="js/dashboard.js"></script>
 </body>
 

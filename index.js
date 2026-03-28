@@ -81,13 +81,17 @@ db.exec(`
 // Seed default site settings
 const defaultSettings = [
   { key: 'site_title', value: 'MCC CAMPUS MATRICULATION HIGHER SECONDARY SCHOOL' },
-  { key: 'site_subtitle', value: '#1, Air Force Road, East Tambaram, Chennai - 600059' },
-  { key: 'site_contact', value: 'Ph : 044-2239 1620 | E-mail : mcccampus.school91@gmail.com' },
-  { key: 'form_title', value: 'APPLICATION FOR ADMISSION (CLASS XI and XII)' },
-  { key: 'form_subtitle', value: 'Please refer to the physical form and fill all mandatory fields exactly.' },
+  { key: 'site_subtitle', value: 'MATRICULATION SCHOOL' },
+  { key: 'site_location', value: '#1, Air Force Road, East Tambaram, Chennai - 600059' },
+  { key: 'site_contact', value: '044-2239 1620 | mcccampus.school91@gmail.com' },
+  { key: 'form_title', value: 'APPLICATION FOR ADMISSION (CLASS XI to XII)' },
+  { key: 'form_subtitle', value: 'MCC Campus Matriculation Higher Secondary School traces its root as Campus Primary School in the premises of MCC in 1985. It is recognized by the Government of Tamil Nadu Matriculation Board of Education.' },
   { key: 'logo_path', value: '/images/logo.png' },
-  { key: 'footer_text', value: '© 2026 MCC Campus Matriculation Higher Secondary School' }
+  { key: 'landing_title', value: 'MCC CAMPUS Matriculation Higher Secondary School' },
+  { key: 'footer_text', value: '2026 MCC Campus Matriculation Higher Secondary School' }
 ];
+
+
 const insertSetting = db.prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)');
 defaultSettings.forEach(s => insertSetting.run(s.key, s.value));
 
@@ -95,8 +99,8 @@ defaultSettings.forEach(s => insertSetting.run(s.key, s.value));
 try {
   const formCount = db.prepare('SELECT COUNT(*) as c FROM forms').get().c;
   if (formCount === 0) {
-    db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS Lkg and X)', 'LKG to X Admission Form');
-    db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS XI and XII)', 'XI and XII Admission Form');
+    db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS Lkg to X)', 'LKG to X Admission Form');
+    db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS XI to XII)', 'XI and XII Admission Form');
   }
 } catch (e) { console.error('Form seeding error:', e); }
 
@@ -105,7 +109,7 @@ try {
   const existingCount = db.prepare('SELECT COUNT(*) as c FROM form_fields').get().c;
   if (existingCount === 0) {
     const insertField = db.prepare(`INSERT OR IGNORE INTO form_fields (form_id, step, field_type, field_name, label, placeholder, required, options, sort_order, column_width) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    
+
     // Form 2 (XI & XII) Fields
     const xiFields = [
       [2, 1, 'text', 'pupil_name', '1. Name of the Pupil ( Block Letters )', 'Pupil name here', 1, null, 3, 12],
@@ -167,7 +171,7 @@ try {
       [1, 1, 'text', 'caste', '9. a. Caste (For statistical purpose only)', '', 0, null, 9, 6],
       [1, 1, 'select', 'community', '9. b. Community', 'Select', 1, 'OC,BC,MBC,SC,ST,Denotified Community', 10, 6],
       [1, 1, 'text', 'aadhaar_no', '9. c. Aadhaar Card No.', '', 1, null, 11, 12],
-      
+
       // Step 2: Communication & Parents Info
       [1, 2, 'textarea', 'comm_address', '10. Address for Communication', '', 1, null, 1, 12],
       [1, 2, 'text', 'contact_no_email', '11. Contact No. & Email ID', '', 1, null, 2, 12],
@@ -250,6 +254,25 @@ app.post('/api/apply', upload.single('photograph'), (req, res) => {
   }
 });
 
+app.post('/api/upload-logo', requireAuth, upload.single('logo'), (req, res) => {
+  console.log('[Upload] Request for logo update');
+  if (!req.file) {
+    console.error('[Upload] No file provided');
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+  const logoPath = '/uploads/' + req.file.filename;
+  try {
+    db.prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)').run('logo_path', logoPath);
+    console.log('[Upload] DB Updated:', logoPath);
+    res.json({ success: true, logoPath });
+  } catch (err) {
+    console.error('[Upload] DB Error:', err);
+    res.status(500).json({ success: false });
+  }
+});
+
+
+
 // Other APIs remain same
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
@@ -304,7 +327,7 @@ app.get('/api/applications', requireAuth, (req, res) => {
   query += ' ORDER BY a.submitted_at DESC LIMIT ? OFFSET ?';
   params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
   const apps = db.prepare(query).all(...params);
-  
+
   // Parse JSON data for frontend ease
   const processedApps = apps.map(app => ({
     ...app,

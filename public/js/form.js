@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadFormInfo() {
   try {
-    const res = await fetch('/api/settings');
+    const res = await fetch('/api/settings?t=' + Date.now());
     const s = await res.json();
     
     const formsRes = await fetch('/api/forms');
@@ -23,8 +23,22 @@ async function loadFormInfo() {
     const stitle = id('siteTitle'); if (stitle && s.site_title) stitle.textContent = s.site_title;
     const ssub = id('siteSubtitle'); if (ssub && s.site_subtitle) ssub.textContent = s.site_subtitle;
     
+    // Update Sidebar/Header Logos
+    if (s.logo_path) {
+        document.querySelectorAll('.brand-logo, .footer-logo img').forEach(img => {
+            img.src = s.logo_path + '?t=' + Date.now();
+        });
+    }
+
+    // Update School Info in sidebar if exists
+    const brandName = document.querySelector('.sidebar-brand-name');
+    if (brandName && s.site_title) brandName.textContent = s.site_title;
+    const brandTag = document.querySelector('.sidebar-tagline');
+    if (brandTag && s.site_subtitle) brandTag.textContent = s.site_subtitle;
+    
     const ftitle = id('formTitle'); 
-    if (ftitle) ftitle.textContent = currentForm ? currentForm.name : s.form_title;
+    if (ftitle) ftitle.textContent = s.form_title || (currentForm ? currentForm.name : 'APPLICATION FOR ADMISSION');
+
     
     const fsub = id('formSubtitle'); 
     if (fsub) fsub.textContent = currentForm ? currentForm.description : s.form_subtitle;

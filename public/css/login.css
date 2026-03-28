@@ -1,5 +1,6 @@
 /* ─── MCC-MRF LOGIN PAGE CSS ─── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
 
 *,
 *::before,
@@ -28,9 +29,14 @@ body {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   background: #f1f5f9;
 }
+
+h1, h2, h3, .brand-title {
+  font-family: "Times New Roman", Sans-serif;
+}
+
 
 /* Layout */
 .login-bg {
@@ -257,7 +263,7 @@ body {
   font-size: 14px;
   color: var(--text);
   background: var(--input-bg);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
@@ -358,7 +364,7 @@ body {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   letter-spacing: 0.3px;
   transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
   display: flex;

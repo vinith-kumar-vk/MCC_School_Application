@@ -315,12 +315,13 @@
     <section class="hero">
         <div class="hero-content">
             <span class="welcome-text">WELCOME</span>
-            <h1 class="hero-title th-title">
+            <h1 class="hero-title th-title" id="dynamicHeroTitle">
                 <span class="text-theme">MCC CAMPUS</span> Matriculation Higher Secondary School
             </h1>
-            <p class="hero-desc">MCC Campus Matriculation Higher Secondary School traces its root as Campus Primary
+            <p class="hero-desc" id="dynamicHeroDesc">MCC Campus Matriculation Higher Secondary School traces its root as Campus Primary
                 School in the premises of MCC in 1985. It is recognized by the Government of Tamil Nadu Matriculation
                 Board of Education.</p>
+
 
 
             <div class="button-group">
@@ -359,9 +360,61 @@
     </footer>
 
 
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/api/settings?t=' + Date.now());
+                const s = await res.json();
+                
+                // Update Logos
+                if (s.logo_path) {
+                    document.querySelectorAll('img[src="/images/logo.png"]').forEach(img => {
+                        img.src = s.logo_path + '?t=' + Date.now();
+                    });
+                }
+
+                // Update Welcome Text (above H1)
+                const welcome = document.querySelector('.welcome-text');
+                if (welcome && s.site_subtitle) welcome.textContent = s.site_subtitle;
+
+                // Update Brand Titles (Header and Footer)
+                const brandTitles = document.querySelectorAll('.footer-title, .header-brand-title');
+                if (s.site_title) {
+                    brandTitles.forEach(el => el.textContent = s.site_title);
+                    
+                    // Update Hero Title
+                    const heroTitle = document.getElementById('dynamicHeroTitle');
+                    if (heroTitle && s.landing_title) {
+                        heroTitle.textContent = s.landing_title;
+                    }
+                }
+
+                // Update Hero Description
+                if (s.form_subtitle) {
+                    const heroDesc = document.getElementById('dynamicHeroDesc');
+                    if (heroDesc) heroDesc.textContent = s.form_subtitle;
+                }
+
+                // Update Contact Info in Footer
+                if (s.site_location && s.site_contact) {
+                    const infoTexts = document.querySelectorAll('.footer-info-text');
+                    if (infoTexts.length >= 3) {
+                        infoTexts[0].textContent = s.site_location;
+                        const contactParts = s.site_contact.split('|');
+                        infoTexts[1].textContent = "Ph: " + (contactParts[0] || '').trim();
+                        infoTexts[2].textContent = "Email: " + (contactParts[1] || '').trim();
+                    }
+                }
 
 
-
+                // Update Copyright
+                if (s.footer_text) {
+                    const copyright = document.querySelector('.copyright');
+                    if (copyright) copyright.innerHTML = '&copy; ' + new Date().getFullYear() + ' ' + s.footer_text + '. All rights reserved.';
+                }
+            } catch (e) { console.error('Dynamic load error:', e); }
+        });
+    </script>
 </body>
 
 </html>
