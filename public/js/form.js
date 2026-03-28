@@ -113,18 +113,36 @@ function renderField(f) {
   const reqAttr = f.required ? 'required' : '';
   const star = f.required ? '<span class="required-star">*</span>' : '';
   let inputHtml = '';
+  const fname = f.field_name.toLowerCase();
+
+  let extraAttrs = reqAttr;
+  
+  // Real-time digit locks to completely prevent text input
+  if (/mobile|phone|whatsapp/.test(fname)) {
+      extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" pattern="\\d{10}" inputmode="numeric"`;
+  } else if (/aadhar/.test(fname)) {
+      extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12);" pattern="\\d{12}" inputmode="numeric"`;
+  } else if (/pin_?code/.test(fname)) {
+      extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" pattern="\\d{6}" inputmode="numeric"`;
+  } else if (f.field_type === 'number' || /income|mark|year/.test(fname)) {
+      extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9.]/g, '');" inputmode="decimal"`;
+  }
 
   if (['text', 'email', 'tel', 'number', 'date', 'url'].includes(f.field_type)) {
-    inputHtml = `<input type="${f.field_type}" class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" placeholder="${f.placeholder || ''}" ${reqAttr} />`;
+    let finalType = f.field_type;
+    // Override strict digit fields to 'tel' to ensure regex block works evenly across mobile browsers
+    if ((/mobile|phone|whatsapp|aadhar|pin/.test(fname)) && finalType === 'number') finalType = 'tel'; 
+    inputHtml = `<input type="${finalType}" class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" placeholder="${f.placeholder || ''}" ${extraAttrs} />`;
   } else if (f.field_type === 'textarea') {
-    inputHtml = `<textarea class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" rows="2" placeholder="${f.placeholder || ''}" ${reqAttr}></textarea>`;
+    inputHtml = `<textarea class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" rows="2" placeholder="${f.placeholder || ''}" ${extraAttrs}></textarea>`;
   } else if (f.field_type === 'select') {
     const opts = (f.options || '').split(',').map(o => `<option value="${o.trim()}">${o.trim()}</option>`).join('');
-    inputHtml = `<select class="form-control premium-input form-select" name="${f.field_name}" id="${f.field_name}" ${reqAttr}>
+    inputHtml = `<select class="form-control premium-input form-select" name="${f.field_name}" id="${f.field_name}" ${extraAttrs}>
       <option value="" disabled selected>${f.placeholder || 'Select...'}</option>
       ${opts}
     </select>`;
   }
+
   const colWidth = f.column_width || (f.field_type === 'textarea' ? 12 : 6);
   const colClass = `col-md-${colWidth}`;
   
@@ -133,7 +151,7 @@ function renderField(f) {
       <div class="premium-field">
         <label for="${f.field_name}">${f.label} ${star}</label>
         ${inputHtml}
-        <div class="error-msg" id="err_${f.field_name}"></div>
+        <div class="error-msg" style="color:#ef4444; font-size:12.5px; margin-top:4px; font-weight:600;" id="err_${f.field_name}"></div>
       </div>
     </div>`;
 }
@@ -207,13 +225,31 @@ function initFormLogic() {
       }
     }
 
-    const stepFields = dynamicFieldsConfig.filter(f => f.step === sNum && f.required);
+    const stepFields = dynamicFieldsConfig.filter(f => f.step === sNum);
     stepFields.forEach(f => {
       const el = id(f.field_name);
-      if (!el || el.value.trim()) return;
-      isValid = false;
-      showError(`err_${f.field_name}`, 'Required field');
-      el.classList.add('error');
+      if (!el) return;
+      const fname = f.field_name.toLowerCase();
+      const val = el.value.trim();
+      
+      if (f.required && !val) {
+        isValid = false; showError(`err_${f.field_name}`, 'Required field'); el.classList.add('error'); return;
+      }
+      
+      if (val) {
+        if (f.field_type === 'email' && !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(val)) {
+            isValid = false; showError(`err_${f.field_name}`, 'Invalid email format'); el.classList.add('error');
+        }
+        if (/mobile|phone|whatsapp/.test(fname) && val.length !== 10) {
+            isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 10 digits'); el.classList.add('error');
+        }
+        if (/aadhar/.test(fname) && val.length !== 12) {
+            isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 12 digits'); el.classList.add('error');
+        }
+        if (/pin_?code/.test(fname) && val.length !== 6) {
+            isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 6 digits'); el.classList.add('error');
+        }
+      }
     });
 
     if (sNum === 4) {
