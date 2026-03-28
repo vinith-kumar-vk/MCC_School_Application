@@ -254,22 +254,33 @@ app.post('/api/apply', upload.single('photograph'), (req, res) => {
   }
 });
 
-app.post('/api/upload-logo', requireAuth, upload.single('logo'), (req, res) => {
-  console.log('[Upload] Request for logo update');
-  if (!req.file) {
-    console.error('[Upload] No file provided');
-    return res.status(400).json({ success: false, message: 'No file uploaded' });
-  }
-  const logoPath = '/uploads/' + req.file.filename;
-  try {
-    db.prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)').run('logo_path', logoPath);
-    console.log('[Upload] DB Updated:', logoPath);
-    res.json({ success: true, logoPath });
-  } catch (err) {
-    console.error('[Upload] DB Error:', err);
-    res.status(500).json({ success: false });
-  }
+// Specialized storage for logo (always public/images/logo.png)
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, imagesDir),
+  filename: (req, file, cb) => cb(null, 'logo.png')
 });
+const logoUpload = multer({ storage: logoStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+app.post('/api/upload-logo', requireAuth, (req, res, next) => {
+  logoUpload.single('logo')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ success: false, message: 'File too large (Max 5MB)' });
+    } else if (err) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+    
+    try {
+      if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+      const logoPath = '/images/logo.png';
+      db.prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)').run('logo_path', logoPath);
+      res.json({ success: true, logoPath });
+    } catch (dbErr) {
+      res.status(500).json({ success: false, message: dbErr.message });
+    }
+  });
+});
+
+
 
 
 

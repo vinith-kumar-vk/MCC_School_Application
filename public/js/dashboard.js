@@ -197,10 +197,25 @@ async function uploadLogo() {
   fd.append('logo', file);
   try {
     const res = await fetch('/api/upload-logo', { method:'POST', body:fd });
-    const data = await res.json();
-    if (data.success) { showToast('Logo updated!'); loadSiteSettings(); }
-  } catch (e) { showToast('Upload failed'); }
+    let data;
+    try { data = await res.json(); } catch(jsonErr) {
+        if(!res.ok) throw new Error(`Server returned ${res.status}: ${res.statusText}`);
+        throw jsonErr;
+    }
+    
+    if (data.success) { 
+      showToast('Logo updated successfully!'); 
+      setTimeout(() => loadSiteSettings(), 500); 
+    } else {
+      showToast('Upload failed: ' + (data.message || 'Unknown error'));
+    }
+  } catch (e) { 
+    console.error(e);
+    showToast(e.message || 'Upload failed. Check server console.'); 
+  }
 }
+
+
 
 
 async function loadFormFields() {

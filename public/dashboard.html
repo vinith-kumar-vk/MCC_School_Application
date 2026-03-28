@@ -33,15 +33,9 @@
 
   <!-- ──── SIDEBAR ──── -->
   <aside class="sidebar" id="sidebar">
-    <div class="sb-header">
+    <div class="sb-header" style="justify-content: center; padding: 30px 20px;">
       <div class="sb-logo">
-        <img src="/images/logo.png" alt="Logo" id="sbLogo" width="40" height="40"
-          style="background:#fff; border-radius:8px; padding:2px; box-shadow:0 4px 10px rgba(0,0,0,0.15)" />
-      </div>
-      <div class="sb-brand-info">
-        <div class="sb-brand-name" id="sbBrandName">MCC CAMPUS</div>
-        <div class="sb-brand-sub" id="sbBrandSub">MATRICULATION SCHOOL</div>
-        <div class="sb-brand-location" id="sbBrandLoc">Chennai - 600 059</div>
+        <img src="/images/logo.png" alt="Logo" id="sbLogo" style="width: 100%; " />
       </div>
     </div>
 
@@ -218,7 +212,8 @@
             <input type="text" id="searchInput" placeholder="Search entries..." class="form-control"
               onkeypress="if(event.key === 'Enter'){ currentPage=1; loadAllUsers(0); }">
           </div>
-          <select id="applicationsFormFilter" class="form-control" style="width:200px;" onchange="currentPage=1; loadAllUsers(0)">
+          <select id="applicationsFormFilter" class="form-control" style="width:200px;"
+            onchange="currentPage=1; loadAllUsers(0)">
             <option value="">All Forms</option>
           </select>
           <div class="filter-actions">
@@ -267,66 +262,76 @@
         <p class="page-subtitle">Manage the school logo and application form titles.</p>
       </div>
 
-        <!-- SECTION 1: GLOBAL SCHOOL IDENTITY -->
-        <div class="cms-card">
-          <div class="cms-card-title"><i class="fa-solid fa-school" style="color:#8B1A2E;"></i> Global School Identity</div>
-          <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-            <img id="logoPreview" src="/images/logo.png" alt="Logo Preview"
-              style="width:80px; height:80px; object-fit:contain; border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:6px;">
-            <div>
-              <p style="font-size:13px; color:#64748b; margin-bottom:8px;">Change School Logo (Max 5MB)</p>
-              <label class="cms-upload-btn" for="logoFileInput"><i class="fa-solid fa-upload"></i> Choose PNG/JPG</label>
-              <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="previewLogo(event)">
-              <button class="cms-save-btn" onclick="uploadLogo()" style="padding:8px 16px; margin-top:8px; display:block; width:auto;"><i class="fa-solid fa-check"></i> Upload Logo</button>
-            </div>
-          </div>
-          <div class="cms-field">
-            <label>School Name (Header/Footer)</label>
-            <input type="text" id="set_site_title" class="cms-input" placeholder="e.g. MCC CAMPUS MATRICULATION SCHOOL">
-          </div>
-          <div class="cms-field">
-            <label>School Address / Location</label>
-            <input type="text" id="set_site_location" class="cms-input" placeholder="#1, Air Force Road...">
-          </div>
-          <div class="cms-field">
-            <label>Contact Details (Ph / Email)</label>
-            <input type="text" id="set_site_contact" class="cms-input" placeholder="Ph: 044... | Email: ...">
-          </div>
-          <button class="cms-save-btn" onclick="saveBrandSettings()"><i class="fa-solid fa-floppy-disk"></i> Save School Identity</button>
+      <!-- SECTION 1: GLOBAL SCHOOL IDENTITY -->
+      <div class="cms-card">
+        <div class="cms-card-title"><i class="fa-solid fa-school" style="color:#8B1A2E;"></i> Global School Identity
         </div>
+        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+          <img id="logoPreview" src="/images/logo.png" alt="Logo Preview"
+            style="width:80px; height:80px; object-fit:contain; border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:6px;">
+          <div>
+            <p style="font-size:13px; color:#64748b; margin-bottom:8px;">Change School Logo (Max 5MB)</p>
+            <label class="cms-upload-btn" for="logoFileInput"><i class="fa-solid fa-upload"></i> Choose PNG/JPG</label>
+            <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="previewLogo(event)">
+            <button class="cms-save-btn" onclick="uploadLogo()"
+              style="padding:8px 16px; margin-top:8px; display:block; width:auto;"><i class="fa-solid fa-check"></i>
+              Upload Logo</button>
+          </div>
+        </div>
+        <div class="cms-field">
+          <label>School Name (Header/Footer)</label>
+          <input type="text" id="set_site_title" class="cms-input" placeholder="e.g. MCC CAMPUS MATRICULATION SCHOOL">
+        </div>
+        <div class="cms-field">
+          <label>School Address / Location</label>
+          <input type="text" id="set_site_location" class="cms-input" placeholder="#1, Air Force Road...">
+        </div>
+        <div class="cms-field">
+          <label>Contact Details (Ph / Email)</label>
+          <input type="text" id="set_site_contact" class="cms-input" placeholder="Ph: 044... | Email: ...">
+        </div>
+        <button class="cms-save-btn" onclick="saveBrandSettings()"><i class="fa-solid fa-floppy-disk"></i> Save School
+          Identity</button>
+      </div>
 
-        <!-- SECTION 2: LANDING PAGE CMS (BANNER & CONTENT) -->
-        <div class="cms-card">
-          <div class="cms-card-title"><i class="fa-solid fa-house-chimney" style="color:#8B1A2E;"></i> Landing Page Content</div>
-          <div class="cms-field">
-            <label>Banner Welcome Text (Above Title)</label>
-            <input type="text" id="set_site_subtitle" class="cms-input" placeholder="e.g. WELCOME TO">
-          </div>
-          <div class="cms-field">
-            <label>Banner Main Title (H1)</label>
-            <input type="text" id="set_landing_title" class="cms-input" placeholder="e.g. EXCELLENCE IN EDUCATION">
-          </div>
-          <div class="cms-field">
-            <label>Banner Description (Paragraph)</label>
-            <textarea id="set_form_subtitle" class="cms-input" rows="4" placeholder="Briefly describe the school..."></textarea>
-          </div>
-          <div class="cms-field">
-            <label>Footer Copyright Notice</label>
-            <input type="text" id="set_footer_text" class="cms-input" placeholder="© 2026 MCC Campus School">
-          </div>
-          <button class="cms-save-btn" onclick="saveLandingPageSettings()"><i class="fa-solid fa-floppy-disk"></i> Save Landing Page</button>
+      <!-- SECTION 2: LANDING PAGE CMS (BANNER & CONTENT) -->
+      <div class="cms-card">
+        <div class="cms-card-title"><i class="fa-solid fa-house-chimney" style="color:#8B1A2E;"></i> Landing Page
+          Content</div>
+        <div class="cms-field">
+          <label>Banner Welcome Text (Above Title)</label>
+          <input type="text" id="set_site_subtitle" class="cms-input" placeholder="e.g. WELCOME TO">
         </div>
+        <div class="cms-field">
+          <label>Banner Main Title (H1)</label>
+          <input type="text" id="set_landing_title" class="cms-input" placeholder="e.g. EXCELLENCE IN EDUCATION">
+        </div>
+        <div class="cms-field">
+          <label>Banner Description (Paragraph)</label>
+          <textarea id="set_form_subtitle" class="cms-input" rows="4"
+            placeholder="Briefly describe the school..."></textarea>
+        </div>
+        <div class="cms-field">
+          <label>Footer Copyright Notice</label>
+          <input type="text" id="set_footer_text" class="cms-input" placeholder="© 2026 MCC Campus School">
+        </div>
+        <button class="cms-save-btn" onclick="saveLandingPageSettings()"><i class="fa-solid fa-floppy-disk"></i> Save
+          Landing Page</button>
+      </div>
 
-        <!-- SECTION 3: ADMISSION FORM GLOBAL SETTINGS -->
-        <div class="cms-card" style="grid-column: 1 / -1;">
-          <div class="cms-card-title"><i class="fa-solid fa-file-invoice" style="color:#8B1A2E;"></i> Admission Form Header</div>
-          <div class="cms-field">
-            <label>Global Form Title (Shows on Form Pages)</label>
-            <input type="text" id="set_form_title" class="cms-input" placeholder="APPLICATION FOR ADMISSION">
-          </div>
-          <p style="font-size:12px; color:#64748b; margin-top:-10px;">Note: Change this to update the title seen by students on all forms.</p>
-          <button class="cms-save-btn" onclick="saveFormGlobalSettings()" style="margin-top:15px;"><i class="fa-solid fa-floppy-disk"></i> Save Form Title</button>
+      <!-- SECTION 3: ADMISSION FORM GLOBAL SETTINGS -->
+      <div class="cms-card" style="grid-column: 1 / -1;">
+        <div class="cms-card-title"><i class="fa-solid fa-file-invoice" style="color:#8B1A2E;"></i> Admission Form
+          Header</div>
+        <div class="cms-field">
+          <label>Global Form Title (Shows on Form Pages)</label>
+          <input type="text" id="set_form_title" class="cms-input" placeholder="APPLICATION FOR ADMISSION">
         </div>
+        <p style="font-size:12px; color:#64748b; margin-top:-10px;">Note: Change this to update the title seen by
+          students on all forms.</p>
+        <button class="cms-save-btn" onclick="saveFormGlobalSettings()" style="margin-top:15px;"><i
+            class="fa-solid fa-floppy-disk"></i> Save Form Title</button>
+      </div>
     </div>
 
     <!-- ── PAGE: FORM BUILDER ── -->
@@ -336,11 +341,13 @@
           <div class="cms-card-title" style="margin-bottom:0;"><i class="fa-solid fa-list-check"
               style="color:#8B1A2E;"></i> Application Forms & Fields</div>
           <div style="display:flex; gap:10px; align-items:center;">
-            <select id="builderFormSelector" class="form-control" style="width:250px; margin:0;" onchange="loadFields()">
+            <select id="builderFormSelector" class="form-control" style="width:250px; margin:0;"
+              onchange="loadFields()">
               <!-- Forms injected here -->
             </select>
             <button id="saveOrderBtn" class="cms-save-btn" onclick="saveFieldsOrder()"
-              style="width:auto; margin:0; background:#10b981; display:none;"><i class="fa-solid fa-check"></i> Save Order</button>
+              style="width:auto; margin:0; background:#10b981; display:none;"><i class="fa-solid fa-check"></i> Save
+              Order</button>
             <button class="cms-save-btn" onclick="openFieldModal(null)" style="width:auto; margin:0;"><i
                 class="fa-solid fa-plus"></i> Add Field</button>
           </div>
@@ -385,11 +392,15 @@
   <!-- Detail Modal -->
   <div class="modal-overlay" id="detailModal">
     <div class="modal">
-      <div class="modal-header" style="background: maroon; color:white; display:flex; justify-content:space-between; align-items:center;">
+      <div class="modal-header"
+        style="background: maroon; color:white; display:flex; justify-content:space-between; align-items:center;">
         <h2 id="modalTitle" style="color:white; margin:0;">Application Detail</h2>
         <div style="display:flex; gap:12px; align-items:center;">
-          <button class="btn" onclick="printApplicationPDF()" style="background:#fff; color:maroon; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="fa-solid fa-file-pdf"></i> PDF</button>
-          <button class="close-btn" onclick="closeDetailModal()" style="color:white; font-size:32px; border:none; background:none;">&times;</button>
+          <button class="btn" onclick="printApplicationPDF()"
+            style="background:#fff; color:maroon; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;"><i
+              class="fa-solid fa-file-pdf"></i> PDF</button>
+          <button class="close-btn" onclick="closeDetailModal()"
+            style="color:white; font-size:32px; border:none; background:none;">&times;</button>
         </div>
       </div>
 
@@ -493,8 +504,10 @@
           <textarea id="edit_form_desc" class="cms-input" rows="3"></textarea>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-          <button class="cms-save-btn" onclick="deleteForm()" style="background:#ef4444; margin:0; width:auto;"><i class="fa-solid fa-trash"></i> Delete Form</button>
-          <button class="cms-save-btn" onclick="saveFormSettings()" style="margin:0; flex:1;"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+          <button class="cms-save-btn" onclick="deleteForm()" style="background:#ef4444; margin:0; width:auto;"><i
+              class="fa-solid fa-trash"></i> Delete Form</button>
+          <button class="cms-save-btn" onclick="saveFormSettings()" style="margin:0; flex:1;"><i
+              class="fa-solid fa-floppy-disk"></i> Save Changes</button>
         </div>
       </div>
     </div>
