@@ -124,7 +124,7 @@ function renderField(f) {
       extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12);" pattern="\\d{12}" inputmode="numeric"`;
   } else if (/pin_?code/.test(fname)) {
       extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" pattern="\\d{6}" inputmode="numeric"`;
-  } else if (f.field_type === 'number' || /income|mark|year/.test(fname)) {
+  } else if ((f.field_type === 'number' || /income|mark|year/.test(fname)) && !/id_mark|identifi|personal/.test(fname)) {
       extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9.]/g, '');" inputmode="decimal"`;
   }
 
@@ -132,6 +132,9 @@ function renderField(f) {
     let finalType = f.field_type;
     // Override strict digit fields to 'tel' to ensure regex block works evenly across mobile browsers
     if ((/mobile|phone|whatsapp|aadhar|pin/.test(fname)) && finalType === 'number') finalType = 'tel'; 
+    // If the CMS accidentally set identification marks as 'number', strictly override to 'text'
+    if (/id_mark|identifi|personal/.test(fname)) finalType = 'text';
+
     inputHtml = `<input type="${finalType}" class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" placeholder="${f.placeholder || ''}" ${extraAttrs} />`;
   } else if (f.field_type === 'textarea') {
     inputHtml = `<textarea class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" rows="2" placeholder="${f.placeholder || ''}" ${extraAttrs}></textarea>`;
