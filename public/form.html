@@ -38,38 +38,6 @@
     .photo-box-centered img {
       border-radius: 2px;
     }
-
-    /* Resetting Internal Styles for Theme Sync */
-    .sidebar-nav {
-      background: var(--sidebar-bg) !important;
-      padding: 40px !important;
-    }
-
-    .nav-label {
-      color: #fff !important;
-    }
-
-    .nav-desc {
-      color: rgba(255, 255, 255, 0.6) !important;
-    }
-
-    #footerText {
-      color: #fff !important;
-    }
-
-    .nav-num {
-      width: 44px !important;
-      height: 44px !important;
-      background: transparent !important;
-      border: 2px solid rgba(255, 255, 255, 0.2) !important;
-      color: rgba(255, 255, 255, 0.4) !important;
-    }
-
-    .nav-item.active .nav-num {
-      background: #fff !important;
-      border-color: #fff !important;
-      color: var(--mcc-maroon) !important;
-    }
   </style>
 <link rel="icon" type="image/png" href="/favicon.png">
 </head>
@@ -88,6 +56,10 @@
             </div>
           </div>
 
+          <!-- Mobile-only: form title shown below logo -->
+          <div class="mobile-form-title" id="mobileSidebarTitle">
+            <p class="mobile-form-title-text" id="mobileTitleText">APPLICATION FOR ADMISSION</p>
+          </div>
 
           <nav class="step-navigation">
             <div class="nav-item active" data-step="1">
@@ -164,11 +136,11 @@
                   <!-- Serial No & Year SUB HEADINGS below header -->
                   <div class="col-12 mb-2">
                     <div class="row px-3">
-                      <div class="col-md-6 text-start">
-                        <span class="fw-bold" style="font-size: 0.95rem; color: var(--mcc-maroon);">Serial No. B</span>
+                      <div class="col-6 text-start">
+                        <span class="fw-bold" style="font-size: 0.85rem; color: var(--mcc-maroon);">Serial No. B</span>
                       </div>
-                      <div class="col-md-6 text-end">
-                        <span class="fw-bold" style="font-size: 0.95rem; color: var(--mcc-maroon);">APPLICATION 2026 -
+                      <div class="col-6 text-end">
+                        <span class="fw-bold" style="font-size: 0.85rem; color: var(--mcc-maroon);">APPLICATION 2026 -
                           2029</span>
                       </div>
                     </div>
@@ -176,17 +148,17 @@
 
                   <!-- Name (left) + Photo (right) with space-between -->
                   <div class="col-12 mb-3 mt-1 px-3">
-                    <div class="d-flex justify-content-between align-items-start">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start">
                       <!-- Left: Name field rendered here -->
-                      <div id="step1NameContainer" style="flex: 1; max-width: 50%;">
+                      <div id="step1NameContainer" class="w-100 pe-md-4 order-2 order-md-1" style="flex: 1;">
                         <!-- pupil_name field injected by form.js -->
                       </div>
 
                       <!-- Right: Passport photo upload -->
-                      <div class="text-end">
+                      <div class="text-start text-md-end mb-4 mb-md-0 order-1 order-md-2">
                         <span class="d-block mb-2 fw-bold text-muted" style="font-size: 0.75rem;">Affix Recent Passport
                           Size Photograph <span class="text-danger">*</span></span>
-                        <div class="photo-box-centered ms-auto position-relative"
+                        <div class="photo-box-centered ms-0 ms-md-auto position-relative"
                           style="width: 120px; height: 150px; border: 2px dashed #8b1a2e; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; cursor: pointer;"
                           onclick="document.getElementById('photograph').click()">
                           <img id="photoPreview"
@@ -300,6 +272,38 @@
   </div>
 
   <script src="js/form.js"></script>
+  <script>
+    // Mobile sticky offset: tells content-header how far down to stick
+    function updateStickyOffset() {
+      if (window.innerWidth <= 768) {
+        const sidebar = document.querySelector('.sidebar-nav');
+        if (sidebar) {
+          const h = sidebar.offsetHeight;
+          document.documentElement.style.setProperty('--mobile-sidebar-height', h + 'px');
+        }
+      } else {
+        document.documentElement.style.setProperty('--mobile-sidebar-height', '0px');
+      }
+    }
+
+    // Sync form title to mobile sidebar
+    function syncMobileTitle() {
+      const src = document.getElementById('formTitle');
+      const dest = document.getElementById('mobileTitleText');
+      if (src && dest && src.textContent.trim()) {
+        dest.textContent = src.textContent.trim();
+      }
+      // Re-calculate sticky offset after title renders
+      updateStickyOffset();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateStickyOffset();
+      // Wait briefly for dynamic JS to populate formTitle
+      setTimeout(syncMobileTitle, 600);
+    });
+    window.addEventListener('resize', updateStickyOffset);
+  </script>
 </body>
 
 </html>

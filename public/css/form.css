@@ -178,16 +178,10 @@ h4,
 }
 
 .nav-item.active .nav-label {
-  color: #fff !important;
+  color: #fff;
 }
 
-.nav-desc {
-  display: block;
-  font-size: 13px;
-  color: var(--text-secondary);
-  font-weight: 500;
-  margin-top: 2px;
-}
+
 
 /* Content Area */
 .content-area {
@@ -538,12 +532,17 @@ h4,
   transition: opacity 0.3s;
 }
 
+/* Mobile-only form title in sidebar — hidden on desktop */
+.mobile-form-title {
+  display: none;
+}
+
 .cursor-pointer {
   cursor: pointer;
 }
 
-/* Responsive */
 /* ─── Responsive Optimizations ─── */
+
 @media (max-width: 1024px) {
   .sidebar-nav {
     width: 280px;
@@ -551,151 +550,293 @@ h4,
   }
 }
 
+/* ── Tablet & Mobile (≤768px) ── */
 @media (max-width: 768px) {
 
-  body,
-  html {
+  body, html {
     overflow: auto;
-    /* Allow natural scrolling on mobile */
   }
 
   .premium-wrapper {
     flex-direction: column;
     height: auto;
+    min-height: 100vh;
     width: 100%;
+    overflow: visible;
   }
 
   .main-container {
     flex-direction: column;
+    height: auto;
+    overflow: visible;
   }
 
+  /* ── Sidebar becomes a STICKY top bar on mobile ── */
   .sidebar-nav {
     width: 100%;
     height: auto;
-    padding: 30px 20px;
+    padding: 14px 20px 12px;
     border-right: none;
-    border-bottom: 1px solid #f1f5f9;
-    text-align: center;
-    /* Center text for logo area */
+    border-bottom: 3px solid rgba(255,255,255,0.15);
+    overflow: visible;
+    position: sticky;
+    top: 0;
+    z-index: 200;
   }
 
+  .sidebar-content {
+    height: auto;
+  }
+
+  /* Logo: 200px centered on mobile */
   .brand-section {
-    margin-bottom: 25px !important;
+    margin-bottom: 10px !important;
   }
 
-  .brand-section .d-flex {
+  .brand-section > div {
     flex-direction: column !important;
     align-items: center !important;
-    gap: 15px !important;
+    justify-content: center !important;
+    gap: 0 !important;
   }
 
-  .sb-brand-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+  .brand-logo {
+    width: 200px;
+    height: auto;
+    flex-shrink: 0;
+    filter: brightness(1);
+    display: block;
+    margin: 0 auto;
   }
 
-  .sidebar-brand-name {
-    font-size: 22px;
+  /* Show mobile form title below logo */
+  .mobile-form-title {
+    display: block;
+    text-align: center;
+    margin: 10px 0 14px;
+    padding: 0 10px;
   }
 
-  .sidebar-tagline {
-    letter-spacing: 0.1em;
-    margin-top: 5px;
+  .mobile-form-title-text {
+    font-family: "Times New Roman", serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+    line-height: 1.4;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 0;
   }
 
+  /* Hide sidebar footer copyright on mobile */
+  .sidebar-footer {
+    display: none !important;
+  }
+
+  /* ── Step Navigation Pills ── */
   .step-navigation {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
+    flex-direction: row;
+    gap: 8px;
+    margin-top: 0;
     overflow-x: auto;
-    padding-bottom: 10px;
+    padding-bottom: 4px;
     scrollbar-width: none;
-    justify-content: flex-start;
+    -ms-overflow-style: none;
   }
 
   .step-navigation::-webkit-scrollbar {
     display: none;
   }
 
+  /* Remove the vertical connector line on mobile */
+  .nav-item::after {
+    display: none;
+  }
+
   .nav-item {
-    margin-bottom: 0;
     flex-shrink: 0;
-    padding: 8px 16px;
-    background: white;
-    border: 1px solid #f1f5f9;
-    border-radius: 20px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+    padding: 7px 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1.5px solid rgba(255,255,255,0.2);
+    border-radius: 50px;
+    opacity: 0.6;
+    cursor: pointer;
   }
 
   .nav-item.active {
-    background: #fdf2f4;
-    border-color: var(--mcc-maroon);
+    background: #fff;
+    border-color: #fff;
+    opacity: 1;
+  }
+
+  .nav-item.completed {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.4);
+    opacity: 0.85;
   }
 
   .nav-num {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     font-size: 11px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    flex-shrink: 0;
+  }
+
+  .nav-item.active .nav-num {
+    width: 22px;
+    height: 22px;
+    background: var(--mcc-maroon) !important;
+    color: #fff !important;
+    border-radius: 50%;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-item.completed .nav-num {
+    color: rgba(255,255,255,0.9);
   }
 
   .nav-label {
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    white-space: nowrap;
+  }
+
+  .nav-item.active .nav-label {
+    color: var(--mcc-maroon) !important;
   }
 
   .nav-desc {
     display: none;
   }
 
-  /* Content area adjustments */
+  /* ── Content Area ── */
+  .content-area {
+    min-height: 0;
+    overflow: visible;
+    height: auto;
+  }
+
+  .form-container-scroll {
+    overflow-y: visible;
+    height: auto;
+  }
+
+  /* Hide form title from content-header on mobile (shown below logo instead) */
+  .form-title-group {
+    display: none !important;
+  }
+
+  /* ── Content Header: sticky below the sidebar ── */
   .content-header {
     height: auto;
-    padding: 15px 20px;
-    justify-content: center !important;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: white;
+    padding: 10px 16px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    background: #fff;
     border-bottom: 1px solid #f1f5f9;
+    position: sticky;
+    top: var(--mobile-sidebar-height, 0px);
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .form-title-group h1 {
+    font-size: 1rem !important;
+    line-height: 1.3;
+  }
+
+  .form-title-group p {
+    font-size: 0.8rem !important;
   }
 
   .progress-container {
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .progress-bar-wrap {
+    width: 100px;
+  }
+
+  /* Center passport photo upload on mobile */
+  .photo-box-centered {
+    margin: 0 auto !important;
+  }
+
+  .col-12.mb-3.mt-1.px-3 .d-flex {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #step1NameContainer {
+    flex: unset !important;
+    width: 100% !important;
+    padding-right: 0 !important;
+    order: 2;
+  }
+
+  .text-start.text-md-end {
+    order: 1;
+    text-align: center !important;
     width: 100%;
-    justify-content: center;
+    margin-bottom: 16px;
   }
 
   .form-content-wrapper {
-    padding: 20px;
+    padding: 16px;
     margin-top: 0;
   }
 
   .step-title {
-    font-size: 24px;
-    text-align: center;
+    font-size: 22px;
+    text-align: left;
   }
 
   .step-subtitle {
-    text-align: center;
+    text-align: left;
   }
 
   .banner-premium {
-    margin-bottom: 30px;
-    padding: 15px;
-    border-left: none;
-    border-top: 4px solid var(--mcc-maroon);
-    text-align: center;
+    margin-bottom: 20px;
+    padding: 12px 16px;
   }
 
-  /* Buttons and Actions */
+  /* Passport photo + name block: stack vertically */
+  #step1NameContainer {
+    flex: unset !important;
+    width: 100% !important;
+    padding-right: 0 !important;
+  }
+
+  /* ── Navigation Footer Buttons ── */
   .navigation-bar-premium {
     flex-direction: column !important;
-    gap: 12px;
-    padding: 25px 20px !important;
+    gap: 10px;
+    padding: 16px !important;
     position: sticky;
     bottom: 0;
     background: white;
     z-index: 100;
-    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.07);
+    border-top: 1px solid #f1f5f9;
   }
 
   .navigation-bar-premium .ms-auto {
@@ -703,16 +844,10 @@ h4,
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 12px !important;
-    order: 1;
-    /* Continue / Submit area first */
+    gap: 10px !important;
   }
 
   #prevBtn {
-    order: 2;
-    /* Previous button second */
-    display: flex !important;
-    /* Force flex for centering */
     width: 100% !important;
   }
 
@@ -723,37 +858,46 @@ h4,
   .btn-premium-maroon,
   .btn-premium-secondary {
     width: 100%;
-    padding: 16px !important;
-    font-size: 16px;
-    display: flex;
+    padding: 15px !important;
+    font-size: 15px;
     justify-content: center;
     align-items: center;
     border-radius: 12px;
   }
 
-  #nextBtn,
-  #submitBtn {
-    order: 1;
-  }
-
   #clearBtn {
-    order: 3;
     width: 100%;
     text-align: center;
-    padding: 12px;
+    padding: 10px;
     font-size: 14px;
     color: #94a3b8 !important;
   }
-
-  /* Force stack fields on mobile */
-  .col-md-6,
-  .col-6 {
-    width: 100% !important;
-  }
 }
 
+/* ── Small Mobile (≤480px) ── */
 @media (max-width: 480px) {
-  .sidebar-brand-name {
+  .sidebar-nav {
+    padding: 12px 16px 10px;
+  }
+
+  .brand-logo {
+    width: 160px;
+  }
+
+  .nav-item {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  .nav-label {
+    font-size: 11px;
+  }
+
+  .form-content-wrapper {
+    padding: 12px;
+  }
+
+  .step-title {
     font-size: 20px;
   }
 }

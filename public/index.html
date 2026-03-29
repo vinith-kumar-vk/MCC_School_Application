@@ -265,33 +265,84 @@
             text-align: center;
         }
 
+        @media (max-width: 992px) {
+            .hero-title { font-size: 40px; }
+            .hero-desc { font-size: 1.05rem; }
+        }
+
         @media (max-width: 768px) {
             .footer-content {
                 flex-direction: column;
-                align-items: center;
-                text-align: center;
+                align-items: flex-start;
+                text-align: left;
             }
 
             .footer-left,
             .footer-right {
                 flex: 0 0 100%;
-                text-align: center;
+                text-align: left;
             }
 
             .footer-right {
                 margin-top: 30px;
+                max-width: 100%;
+                align-items: flex-start;
             }
 
             .hero-title {
-                font-size: 36px;
+                font-size: 32px;
+                margin-bottom: 20px;
             }
 
             .hero {
-                min-height: 600px;
+                min-height: auto;
+                padding: 100px 5%;
             }
 
-            .btn {
+            .button-group {
+                flex-direction: column;
+                gap: 15px;
                 width: 100%;
+                max-width: 400px;
+                margin: 0 auto;
+            }
+
+            .button-group .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            header {
+                padding: 15px 5%;
+            }
+            .logo-area {
+                max-width: 160px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 26px;
+                margin-bottom: 15px;
+            }
+            .hero-desc {
+                font-size: 0.95rem;
+                margin-bottom: 30px;
+            }
+            .logo-area {
+                max-width: 130px;
+            }
+            .nav-links .btn {
+                padding: 8px 16px !important;
+                font-size: 0.75rem !important;
+            }
+            .button-group .btn {
+                padding: 15px 20px;
+                font-size: 0.85rem;
+            }
+            .welcome-text {
+                font-size: 13px;
+                margin-bottom: 15px;
             }
         }
     </style>
