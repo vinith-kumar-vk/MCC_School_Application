@@ -96,12 +96,13 @@ async function loadRecentUsers() {
     tbody.innerHTML = apps.map(app => {
       const date = new Date(app.submitted_at).toLocaleDateString();
       const d = app.form_data || {};
+      const displayClass = d.class_registered || d.admission_class || 'N/A';
       return `
         <tr>
           <td style="font-weight: 600;">${esc(d.pupil_name || 'N/A')}</td>
-          <td>${esc(d.admission_class || 'N/A')}</td>
+          <td>${esc(displayClass)}</td>
           <td>${esc(d.community || 'N/A')}</td>
-          <td><span class="badge" style="background:#f1f5f9; color:#475569;">${esc(app.form_name)}</span></td>
+          <td><span class="badge" style="background:#f1f5f9; color:#475569; font-size:11px;">${esc(app.form_name)}</span></td>
           <td style="color: #64748b;">${date}</td>
         </tr>
       `;
@@ -318,11 +319,12 @@ async function loadAllUsers(offset = 0) {
 
     tbody.innerHTML = apps.map(app => {
         const d = app.form_data || {};
+        const displayClass = d.class_registered || d.admission_class || 'N/A';
         return `
             <tr>
                 <td style="font-weight: 600; color: #1e293b;">${esc(d.pupil_name || 'N/A')}</td>
+                <td><span style="font-weight:500; color:#475569;">${esc(displayClass)}</span></td>
                 <td><span class="badge badge-staff">${esc(app.form_name)}</span></td>
-                <td style="color: #64748b; font-size: 13px;">${esc(d.contact_no_email || 'N/A')}</td>
                 <td><span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">${esc(app.status)}</span></td>
                 <td><button class="action-btn" onclick="viewDetail(${app.id})"><i class="fa-solid fa-eye"></i> View</button></td>
             </tr>
@@ -382,6 +384,9 @@ function viewDetail(id) {
           <div><p style="margin:0; font-size:13px; font-weight:600;">Submitted On</p><p style="margin:0; font-size:12px;">${new Date(app.submitted_at).toLocaleString()}</p></div>
         </div>
         <div style="display:flex; gap:16px;">
+          <button class="btn" style="background:#78091E; color:white; padding:10px 24px; border-radius:8px; border:none; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;" onclick="printApplicationPDF()">
+             <i class="fa-solid fa-file-pdf"></i> PRINT PDF
+          </button>
           <button class="btn" style="background:#00ba7c; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Approved')">APPROVE</button>
           <button class="btn" style="background:#ef4444; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Rejected')">REJECT</button>
         </div>
@@ -426,184 +431,149 @@ async function saveSerial(id) {
   } catch (e) { showToast('Update failed'); }
 }
 
-// Helper tool to safely fetch an image and convert it to Base64 to bypass CORS/html2canvas blocking
-async function getBase64ImageFromUrl(imageUrl) {
-  try {
-    const res = await fetch(imageUrl);
-    const blob = await res.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch (e) {
-    return null;
-  }
-}
-
 async function printApplicationPDF() {
   if (!window.currentAppPrintData) return showToast('No data to print. Please refresh application.');
   
-  // Show loading indicator since base64 conversion might take half a second
-  showToast('Generating Premium PDF...');
+  showToast('Standardizing In-Set Layout...');
   
   const app = window.currentAppPrintData;
   const d = app.form_data || {};
-  
   const safeName = String(app.serial_no || app.id).replace(/[^a-zA-Z0-9]/g, '_');
   const baseUrl = window.location.origin;
 
-  // 1. Process Images to Base64 (Guarantees they appear in the PDF)
-  let logoUrl = id('logoPreview')?.src || (baseUrl + '/images/logo.png');
-  if (logoUrl.startsWith('/')) logoUrl = baseUrl + logoUrl;
+  const logoUrl = baseUrl + '/images/pdf_logo.png';
   const logoBase64 = await getBase64ImageFromUrl(logoUrl) || logoUrl;
 
-  let photoBase64 = null;
+  let photoReady = null;
   if (app.photograph_path) {
-    let pUrl = app.photograph_path.startsWith('/') ? baseUrl + app.photograph_path : app.photograph_path;
-    photoBase64 = await getBase64ImageFromUrl(pUrl);
+     let rawPhotoUrl = app.photograph_path;
+     if (rawPhotoUrl.startsWith('/')) rawPhotoUrl = baseUrl + rawPhotoUrl;
+     else if (!rawPhotoUrl.startsWith('http')) rawPhotoUrl = baseUrl + '/' + rawPhotoUrl;
+     rawPhotoUrl = rawPhotoUrl.replace(/([^:]\/)\/+/g, "$1");
+     photoReady = await getBase64ImageFromUrl(rawPhotoUrl);
   }
 
-  // 2. Setup PDF Engine Options
+  // Dynamic Class Logic
+  const classVal = (d.CLASS_REGISTERED || '').toUpperCase();
+  let classSuffix = '(CLASS LKG to X)';
+  if (classVal.includes('XI') || classVal.includes('XII') || classVal.includes('11') || classVal.includes('12') || classVal.includes('ELEVENTH') || classVal.includes('TWELFTH')) {
+    classSuffix = '(CLASS XI and XII)';
+  }
+
+  const dateStr = new Date(app.submitted_at).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  const allFields = Object.entries(d).filter(([k,v]) => k.toLowerCase() !== 'pupil_name' && !k.toLowerCase().includes('declaration'));
+  const pivot = Math.ceil(allFields.length / 2) + 1;
+  const p1Fields = allFields.slice(0, pivot);
+  const p2Fields = allFields.slice(pivot);
+
+  function makeFieldTable(fields) {
+    let rows = '';
+    fields.forEach(([key, val]) => {
+      rows += `
+        <tr>
+          <td style="padding:4px 10px; border:1px solid #78091E; font-size:7.5pt; font-weight:bold; color:#444; text-transform:uppercase; background:#fbfbfb; width:44%;">${key.replace(/_/g, ' ')}</td>
+          <td style="padding:4px 10px; border:1px solid #78091E; font-size:8.0pt; color:#000; width:56%; font-weight:600;">${esc(val) || '—'}</td>
+        </tr>
+      `;
+    });
+    return `<table style="width:100%; border-collapse:collapse;">${rows}</table>`;
+  }
+
   const opt = {
-    margin: [12, 12, 12, 12],
-    filename: `Application_Record_${safeName}.pdf`,
+    margin: [0, 0, 0, 0],
+    filename: `Application_${safeName}.pdf`,
     image: { type: 'jpeg', quality: 1.0 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css'] }
+    html2canvas: { scale: 2.5, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   const printDiv = document.createElement('div');
-  printDiv.style.padding = '0';
-  printDiv.style.fontFamily = '"Times New Roman", Times, serif'; // Classic official school font
-  printDiv.style.color = '#000';
-  printDiv.style.width = '100%';
+  printDiv.style.width = '790px'; 
+  printDiv.style.fontFamily = 'Georgia, serif';
 
-  const siteTitle = id('set_site_title')?.value || 'MCC Campus Matriculation Higher Secondary School';
-  
-  // 3. Generate Applicant Details Table
-  let fieldsHtml = '<table style="width:100%; border-collapse:collapse; margin-bottom:25px; border: 1.5px solid #000;">';
-  for (const [key, val] of Object.entries(d)) {
-    if (key === 'pupil_name') continue; // pupil_name is uniquely placed
-    fieldsHtml += `
-      <tr style="page-break-inside: avoid;">
-        <td style="padding:10px 15px; width:45%; border:1px solid #cbd5e1; font-size:10.5pt; font-weight:bold; color:#333; text-transform:uppercase; background:#f8fafc;">
-           ${esc(key.replace(/_/g, ' '))}
+  const headerHtml = `
+    <table style="width:100%; border-collapse:collapse; margin-bottom:10px; border-bottom:1.8px solid #78091E; padding-bottom:8px;">
+      <tr>
+        <td style="width:90px; vertical-align:middle;"><img src="${logoBase64}" style="width:80px; height:auto; display:block;"></td>
+        <td style="text-align:center; vertical-align:middle;">
+           <div style="color:#78091E; font-size:18pt; font-weight:900; line-height:1.0; text-transform:uppercase;">MCC CAMPUS</div>
+           <div style="color:#78091E; font-size:11pt; font-weight:900; line-height:1.2; margin-top:4px; text-transform:uppercase; white-space:nowrap;">MATRICULATION HIGHER SECONDARY SCHOOL</div>
+           <div style="margin-top:6px; font-size:10.5pt; font-weight:900; color:#1a1a1a; text-decoration: underline; text-transform:uppercase;">APPLICATION FOR ADMISSION ${classSuffix}</div>
         </td>
-        <td style="padding:10px 15px; width:55%; border:1px solid #cbd5e1; font-size:11pt; color:#000; font-family:'Arial', sans-serif;">
-           ${esc(val) || '—'}
-        </td>
+        <td style="width:90px;"></td>
       </tr>
-    `;
-  }
-  fieldsHtml += '</table>';
+    </table>
+  `;
 
-  const photoHtml = photoBase64 
-    ? `<img src="${photoBase64}" style="width:100%; height:100%; object-fit:cover; display:block;">` 
-    : `<div style="text-align:center; padding-top:45px; color:#94a3b8; font-size:9pt; font-weight:bold; font-family:Arial, sans-serif;">PASSPORT<br>PHOTOGRAPH</div>`;
+  // OUTER PAGE wrapper (White space)
+  const outerStyle = "box-sizing:border-box; width:100%; height:1120px; background:#fff; position:relative; overflow:hidden; page-break-after:always; padding: 6mm;";
+  // INNER BORDER box
+  const innerStyle = "box-sizing:border-box; border: 2.2px solid #78091E; padding: 8mm; height: 100%; background:#fff; position:relative;";
 
-  const dateStr = new Date(app.submitted_at).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
-
-  // 4. Build the final HTML Structure
   printDiv.innerHTML = `
-    <!-- MAIN APPLICATION WRAPPER with Border -->
-    <div style="background:#fff; width:100%; box-sizing:border-box; border: 2px solid #78091E; padding: 25px; border-radius: 4px;">
-      
-      <!-- TRADITIONAL CENTERED HEADER -->
-      <table style="width:100%; margin-bottom:15px; border-bottom:3px solid #78091E; padding-bottom:15px;">
-        <tr>
-          <!-- Column 1: Logo -->
-          <td style="width:115px; min-width:115px; text-align:left; vertical-align:middle;">
-             <div style="background-color:#78091E; border-radius:10px; width:95px; height:95px; line-height:95px; text-align:center; overflow:hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <img src="${logoBase64}" style="max-width:70px; max-height:70px; width:auto; height:auto; object-fit:contain; vertical-align:middle; display:inline-block;">
-             </div>
-          </td>
-          
-          <!-- Column 2: Centered Title -->
-          <td style="text-align:center; vertical-align:middle; padding:0 20px;">
-             <h1 style="color:#78091E; margin:0 0 6px 0; line-height:1.2; font-size:18pt; font-weight:900; text-transform:uppercase; font-family:'Times New Roman', serif;">${siteTitle}</h1>
-             <div style="font-size:12.5pt; font-weight:bold; letter-spacing:0.5px; color:#000; text-transform:uppercase; font-family:Arial, sans-serif;">
-                ${esc(app.form_name)}
-             </div>
-          </td>
-          
-          <!-- Column 3: Spacer for perfect centering -->
-          <td style="width:115px; min-width:115px;"></td>
-        </tr>
-      </table>
-
-      <!-- APPLICANT HIGHLIGHT ROW & PHOTO -->
-      <table style="width:100%; margin-bottom:25px; page-break-inside: avoid; border-collapse: collapse;">
-        <tr>
-          <td style="vertical-align:top; padding-right:25px;">
-             <div style="margin-bottom:20px;">
-                <div style="font-size:9.5pt; color:#555; font-weight:bold; margin-bottom:5px; text-transform:uppercase; font-family:Arial, sans-serif;">Name of the Applicant</div>
-                <div style="font-size:18pt; font-weight:900; color:#78091E; text-transform:uppercase; font-family:Arial, sans-serif; letter-spacing: 0.5px;">
-                   ${esc(d.pupil_name || 'N/A')}
-                </div>
-             </div>
-             
-             <table style="width:100%; border-collapse: collapse; font-family:Arial, sans-serif;">
-                <tr>
-                   <td style="width:33%; vertical-align:top;">
-                      <div style="font-size:9pt; color:#555; font-weight:bold; margin-bottom:4px; text-transform:uppercase;">Serial No</div>
-                      <div style="font-size:12pt; font-weight:900; color:#1e293b;">
-                         ${app.serial_no || app.id}
-                      </div>
-                   </td>
-                   <td style="width:33%; vertical-align:top;">
-                      <div style="font-size:9pt; color:#555; font-weight:bold; margin-bottom:4px; text-transform:uppercase;">Admission Status</div>
-                      <div style="font-size:12pt; font-weight:900; color: ${app.status==='Approved' ? '#059669' : (app.status==='Rejected' ? '#dc2626' : '#d97706')}; text-transform:uppercase;">
-                         ${app.status}
-                      </div>
-                   </td>
-                   <td style="width:34%; vertical-align:top;">
-                      <div style="font-size:9pt; color:#555; font-weight:bold; margin-bottom:4px; text-transform:uppercase;">Application Date</div>
-                      <div style="font-size:11pt; font-weight:bold; color:#000;">
-                         ${dateStr}
-                      </div>
-                   </td>
-                </tr>
-             </table>
-          </td>
-          
-          <td style="width:130px; vertical-align:top; text-align:right;">
-             <div style="width:125px; height:155px; border:1px solid #000; background:#fff; padding:3px; display:block; box-shadow: 2px 2px 0px #ccc;">
-                ${photoHtml}
-             </div>
-          </td>
-        </tr>
-      </table>
-
-      <!-- DETAILED FIELDS SECTION -->
-      <div style="margin-bottom:30px;">
-         <div style="background:#78091E; color:#fff; font-size:12pt; font-weight:bold; padding:8px 15px; margin-bottom:1px; text-transform:uppercase; font-family:Arial, sans-serif;">Applicant Details</div>
-         ${fieldsHtml}
+    <!-- PAGE 1 -->
+    <div style="${outerStyle}">
+      <div style="${innerStyle}">
+        ${headerHtml}
+        <table style="width:100%; margin: 8px 0 12px 0; border-collapse:collapse;">
+          <tr>
+            <td style="vertical-align:top;">
+               <div style="margin-bottom:12px; border-bottom:1px dashed #eee; padding-bottom:10px;">
+                  <span style="font-size:9pt; font-weight:700; color:#666; text-transform:uppercase; margin-right:10px;">Name of the Applicant:</span>
+                  <span style="font-size:18pt; font-weight:900; color:#78091E; text-transform:uppercase;">${esc(d.pupil_name || 'N/A')}</span>
+               </div>
+               <table style="width:95%;">
+                  <tr>
+                     <td style="width:50%;">
+                        <div style="font-size:8.5pt; color:#666; font-weight:bold; text-transform:uppercase;">Serial No</div>
+                        <div style="font-size:13pt; color:#000; font-weight:900; margin-top:2px;">${app.serial_no || app.id}</div>
+                     </td>
+                     <td style="width:50%;">
+                        <div style="font-size:8.5pt; color:#666; font-weight:bold; text-transform:uppercase;">Application Date</div>
+                        <div style="font-size:13pt; color:#000; font-weight:900; margin-top:2px;">${dateStr}</div>
+                     </td>
+                  </tr>
+               </table>
+            </td>
+            <td style="width:160px; text-align:right; vertical-align:top;">
+               <div style="width:140px; height:180px; border:2px solid #000; padding:1px; background:#f9f9f9;">
+                  ${photoReady ? `<img src="${photoReady}" style="width:100%; height:100%; object-fit:cover; display:block;">` : `<div style="text-align:center; padding-top:70px; color:#ddd; font-weight:bold;">PHOTO</div>`}
+               </div>
+            </td>
+          </tr>
+        </table>
+        <div style="background:#78091E; color:#fff; font-size:10.5pt; font-weight:900; padding:5px 15px; text-transform:uppercase;">Applicant Profile - Part I</div>
+        ${makeFieldTable(p1Fields)}
       </div>
+    </div>
 
-      <!-- DECLARATION & SIGNATURES -->
-      <div style="page-break-inside: avoid; margin-top:20px;">
-         <div style="font-size:10pt; color:#000; line-height:1.6; text-align:justify; margin-bottom:60px; font-family:Arial, sans-serif;">
-            <strong style="color:#78091E;">DECLARATION:</strong> I hereby declare that all the information provided in this application form is true, complete, and correct to the best of my knowledge and belief. I understand that any discrepancy or false information will render this application invalid and subject to cancellation of admission under the sole discretion of the management.
+    <!-- PAGE 2 -->
+    <div style="${outerStyle}">
+      <div style="${innerStyle}">
+         <div style="background:#78091E; color:#fff; font-size:10.5pt; font-weight:900; padding:5px 15px; text-transform:uppercase;">Applicant Profile - Part II</div>
+         ${makeFieldTable(p2Fields)}
+
+         <div style="margin-top:35px;">
+            <table style="width:100%; border-collapse:collapse;">
+              <tr>
+                 <td style="width:31%; text-align:center;">
+                    <div style="height:35px;"></div>
+                    <div style="border-top:1.5px solid #000; padding-top:6px; font-weight:900; font-size:9pt; text-transform:uppercase; color:#000;">Applicant Sign</div>
+                 </td>
+                 <td style="width:4.5%;"></td>
+                 <td style="width:31%; text-align:center;">
+                    <div style="height:35px;"></div>
+                    <div style="border-top:1.5px solid #000; padding-top:6px; font-weight:900; font-size:9pt; text-transform:uppercase; color:#000;">Parent Sign</div>
+                 </td>
+                 <td style="width:4.5%;"></td>
+                 <td style="width:29%; text-align:center;">
+                    <div style="height:35px;"></div>
+                    <div style="border-top:1.5px solid #000; padding-top:6px; font-weight:900; font-size:9pt; text-transform:uppercase; color:#000;">Principal Sign</div>
+                 </td>
+              </tr>
+            </table>
          </div>
-         
-         <table style="width:100%; margin-top:20px; font-family:Arial, sans-serif;">
-            <tr>
-               <td style="width:33%; text-align:left; vertical-align:bottom;">
-                  <div style="border-top:1px solid #000; padding-top:8px; font-size:10pt; font-weight:bold; color: #000; display:inline-block; width:180px; text-align:center;">Candidate Signature</div>
-               </td>
-               <td style="width:34%; text-align:center; vertical-align:bottom;">
-                  <div style="border-top:1px solid #000; padding-top:8px; font-size:10pt; font-weight:bold; color: #000; display:inline-block; width:180px; text-align:center;">Parent/Guardian Signature</div>
-               </td>
-               <td style="width:33%; text-align:right; vertical-align:bottom;">
-                  <div style="border-top:1px solid #000; padding-top:8px; font-size:10pt; font-weight:bold; color: #000; display:inline-block; width:180px; text-align:center;">Principal Signature / Seal</div>
-               </td>
-            </tr>
-         </table>
       </div>
-
     </div>
   `;
 
@@ -750,6 +720,7 @@ function openFormSettingsModal() {
   if (!form) return;
   id('edit_form_name').value = form.name;
   id('edit_form_desc').value = form.description || '';
+  id('edit_form_subtitle').value = form.subtitle || '';
   id('formSettingsModal').classList.add('active');
 }
 
@@ -759,11 +730,12 @@ async function saveFormSettings() {
   const formId = id('builderFormSelector')?.value;
   const name = id('edit_form_name').value;
   const description = id('edit_form_desc').value;
+  const subtitle = id('edit_form_subtitle').value;
   try {
     const res = await fetch(`/api/forms/${formId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description })
+      body: JSON.stringify({ name, description, subtitle })
     });
     if (res.ok) {
         showToast('Form updated!');
@@ -804,5 +776,30 @@ async function createNewForm() {
       loadFormFields();
     }
   } catch (e) { showToast('Error creating form'); }
+}
+
+// HELPERS FOR PDF
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, function(m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+function getBase64ImageFromUrl(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.setAttribute('crossOrigin', 'anonymous');
+    img.onload = function () {
+      const canvas = document.createElement("canvas");
+      canvas.width = this.width;
+      canvas.height = this.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(this, 0, 0);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => resolve(null);
+    img.src = url + "?t=" + new Date().getTime(); // Prevent caching issues
+  });
 }
 

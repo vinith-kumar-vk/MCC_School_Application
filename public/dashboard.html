@@ -115,7 +115,7 @@
           <h1 class="page-title">Admission Overview</h1>
           <p class="page-subtitle">Welcome! Monitor the latest school admission applications here.</p>
         </div>
-        <select id="dashboardFormFilter" class="form-control" style="width:250px;" onchange="loadStats()">
+        <select id="dashboardFormFilter" class="form-control" style="width:250px;" onchange="loadStats(); loadRecentUsers();">
           <option value="">All Applications</option>
         </select>
       </div>
@@ -370,6 +370,9 @@
               onchange="loadFields()">
               <!-- Forms injected here -->
             </select>
+            <button class="btn btn-secondary" onclick="openFormSettingsModal()" style="padding: 10px 18px; border-radius: 8px; background: #8B1A2E; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;" title="Edit Form Properties">
+              <i class="fa-solid fa-gear"></i> Edit Form Properties
+            </button>
             <button id="saveOrderBtn" class="cms-save-btn" onclick="saveFieldsOrder()"
               style="width:auto; margin:0; background:#10b981; display:none;"><i class="fa-solid fa-check"></i> Save
               Order</button>
@@ -414,26 +417,7 @@
 
   </main>
 
-  <!-- Detail Modal -->
-  <div class="modal-overlay" id="detailModal">
-    <div class="modal">
-      <div class="modal-header"
-        style="background: maroon; color:white; display:flex; justify-content:space-between; align-items:center;">
-        <h2 id="modalTitle" style="color:white; margin:0;">Application Detail</h2>
-        <div style="display:flex; gap:12px; align-items:center;">
-          <button class="btn" onclick="printApplicationPDF()"
-            style="background:#fff; color:maroon; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;"><i
-              class="fa-solid fa-file-pdf"></i> PDF</button>
-          <button class="close-btn" onclick="closeDetailModal()"
-            style="color:white; font-size:32px; border:none; background:none;">&times;</button>
-        </div>
-      </div>
-
-      <div class="modal-body" id="modalBody">
-        <!-- Content here -->
-      </div>
-    </div>
-  </div>
+  <!-- Final Modal Structure Below -->
 
   <!-- Field Edit Modal -->
   <div class="modal-overlay" id="fieldModal">
@@ -502,15 +486,18 @@
     </div>
   </div>
 
-  <!-- Pupil Admission Detail Modal -->
   <div id="detailModal" class="modal-overlay">
     <div class="modal" style="width: 95%; max-width: 1200px; padding:0;">
-      <div
-        style="background: #8B1A2E; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0;">
-        <h2 id="modalTitle" style="margin: 0; font-size: 18px; letter-spacing: 0.5px;">PUPIL ADMISSION DETAIL</h2>
-        <button class="close-btn" onclick="closeDetailModal()"
-          style="background: rgba(255,255,255,0.1); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"><i
-            class="fa-solid fa-xmark"></i></button>
+      <div style="background: #8B1A2E; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0;">
+        <h2 id="modalTitle" style="margin: 0; font-size: 18px; font-weight:700; letter-spacing: 0.5px;">PUPIL ADMISSION DETAIL</h2>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button class="btn" onclick="printApplicationPDF()" style="background: white; color: #8B1A2E; border: none; padding: 6px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+             <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 16px;"></i> PDF
+          </button>
+          <button class="close-btn" onclick="closeDetailModal()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
+             <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
       <div id="modalBody" style="padding: 30px; max-height: 85vh; overflow-y: auto; background: #fff;">
         <!-- Content injected by JS -->
@@ -533,6 +520,10 @@
         <div class="cms-field">
           <label>Form Description</label>
           <textarea id="edit_form_desc" class="cms-input" rows="3"></textarea>
+        </div>
+        <div class="cms-field">
+          <label>Form Subtitle (Header Second Line)</label>
+          <input type="text" id="edit_form_subtitle" class="cms-input" placeholder="e.g., LKG to X ADMISSION FORM">
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
           <button class="cms-save-btn" onclick="deleteForm()" style="background:#ef4444; margin:0; width:auto;"><i

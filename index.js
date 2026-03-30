@@ -271,8 +271,8 @@ app.post('/api/apply', upload.single('photograph'), (req, res) => {
       serialNo: serialNo 
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+    console.error('Submission Error:', err);
+    res.status(500).json({ success: false, message: 'Server error: ' + err.message });
   }
 });
 
@@ -371,7 +371,7 @@ app.get('/api/applications', requireAuth, (req, res) => {
     params.push(`%${search}%`, `%${search}%`);
   }
   const totalCount = db.prepare(`SELECT COUNT(*) as count FROM (${query})`).get(...params).count;
-  query += ' ORDER BY a.submitted_at DESC LIMIT ? OFFSET ?';
+  query += ' ORDER BY a.id DESC LIMIT ? OFFSET ?';
   params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
   const apps = db.prepare(query).all(...params);
 
@@ -424,14 +424,14 @@ app.get('/api/forms', (req, res) => {
 });
 
 app.post('/api/forms', requireAuth, (req, res) => {
-  const { name, description } = req.body;
-  const result = db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run(name, description || '');
+  const { name, description, subtitle } = req.body;
+  const result = db.prepare('INSERT INTO forms (name, description, subtitle) VALUES (?, ?, ?)').run(name, description || '', subtitle || '');
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
 app.put('/api/forms/:id', requireAuth, (req, res) => {
-  const { name, description } = req.body;
-  db.prepare('UPDATE forms SET name=?, description=? WHERE id=?').run(name, description, req.params.id);
+  const { name, description, subtitle } = req.body;
+  db.prepare('UPDATE forms SET name=?, description=?, subtitle=? WHERE id=?').run(name, description, subtitle || '', req.params.id);
   res.json({ success: true });
 });
 

@@ -32,7 +32,7 @@ async function loadFormInfo() {
     const res = await fetch('/api/settings?t=' + Date.now());
     const s = await res.json();
 
-    const formsRes = await fetch('/api/forms');
+    const formsRes = await fetch('/api/forms?t=' + Date.now());
     const forms = await formsRes.json();
     const currentForm = forms.find(f => f.id == formId);
 
@@ -53,22 +53,17 @@ async function loadFormInfo() {
     if (brandTag && s.site_subtitle) brandTag.textContent = s.site_subtitle;
 
     const ftitle = id('formTitle');
-    if (ftitle) {
-      const perFormTitle = formId == 1 ? s.form1_title : s.form2_title;
-      ftitle.textContent = perFormTitle || s.form_title || (currentForm ? currentForm.name : 'APPLICATION FOR ADMISSION');
+    const fsubtitle = id('formSubtitle');
+    if (ftitle && currentForm) {
+      ftitle.textContent = currentForm.name || 'APPLICATION FOR ADMISSION';
+    }
+    if (fsubtitle && currentForm) {
+      fsubtitle.textContent = currentForm.subtitle || '';
     }
 
     const yearLabel = id('dynamicYearLabel');
     if (yearLabel && s.admission_year) yearLabel.textContent = s.admission_year;
 
-
-    const fsub = id('formSubtitle');
-    if (fsub) {
-      // If it's a serial number placeholder, don't overwrite it with generic text
-      if (!fsub.id === 'headerSerialDisplay') {
-        fsub.textContent = currentForm ? currentForm.description : s.form_subtitle;
-      }
-    }
 
     const footer = id('footerText'); if (footer && s.footer_text) footer.textContent = s.footer_text;
     const logo = id('siteLogo'); if (logo && s.logo_path) logo.src = s.logo_path;
