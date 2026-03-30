@@ -171,7 +171,11 @@ function renderField(f) {
   } else if (f.field_type === 'textarea') {
     inputHtml = `<textarea class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" rows="2" placeholder="${f.placeholder || ''}" ${extraAttrs}></textarea>`;
   } else if (f.field_type === 'select') {
-    const opts = (f.options || '').split(',').map(o => `<option value="${o.trim()}">${o.trim()}</option>`).join('');
+    let opts = (f.options || '').split(',').map(p => p.trim()).filter(p => p).map(o => `<option value="${o}">${o}</option>`).join('');
+    // Permanent fallback for T.C question
+    if (f.label.toUpperCase().includes('T.C')) {
+      opts = `<option value="Yes">Yes</option><option value="No">No</option>`;
+    }
     inputHtml = `<select class="form-select" name="${f.field_name}" id="${f.field_name}" ${extraAttrs} style="height: 52px; border: 1.5px solid #ddd; background-color: #fff; cursor: pointer; position: relative; z-index: 10;">
       <option value="" disabled selected>${f.placeholder || 'Select...'}</option>
       ${opts}
