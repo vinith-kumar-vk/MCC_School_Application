@@ -39,7 +39,7 @@
       border-radius: 2px;
     }
   </style>
-<link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
 <body>
@@ -109,8 +109,8 @@
             <h1 class="h3 fw-bold text-uppercase mb-1" id="formTitle"
               style="color: #0b1c3c; font-weight: 800 !important; letter-spacing: -0.5px;">APPLICATION FOR ADMISSION
               (CLASS XI AND XII)</h1>
-            <p class="text-muted mb-0" id="formSubtitle" style="font-size: 0.95rem;">Please refer to the physical form
-              and fill all mandatory fields exactly.</p>
+            <p class="mb-0 fw-bold" style="font-size: 0.95rem; color: var(--mcc-maroon);">Serial No. B: <span
+                id="headerSerialDisplay" style="letter-spacing: 0.5px;">Loading...</span></p>
           </div>
 
           <!-- Right: Progress Bar -->
@@ -133,55 +133,22 @@
               <section class="form-step active" id="step1">
 
                 <div class="row g-4 position-relative">
-                  <!-- Serial No & Year SUB HEADINGS below header -->
-                  <div class="col-12 mb-2">
-                    <div class="row px-3">
-                      <div class="col-6 text-start">
-                        <span class="fw-bold" style="font-size: 0.85rem; color: var(--mcc-maroon);">Serial No. B</span>
-                      </div>
-                      <div class="col-6 text-end">
-                        <span class="fw-bold" style="font-size: 0.85rem; color: var(--mcc-maroon);">APPLICATION 2026 -
-                          2029</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Name (left) + Photo (right) with space-between -->
-                  <div class="col-12 mb-3 mt-1 px-3">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start">
-                      <!-- Left: Name field rendered here -->
-                      <div id="step1NameContainer" class="w-100 pe-md-4 order-2 order-md-1" style="flex: 1;">
-                        <!-- pupil_name field injected by form.js -->
-                      </div>
-
-                      <!-- Right: Passport photo upload -->
-                      <div class="text-start text-md-end mb-4 mb-md-0 order-1 order-md-2">
-                        <span class="d-block mb-2 fw-bold text-muted" style="font-size: 0.75rem;">Affix Recent Passport
-                          Size Photograph <span class="text-danger">*</span></span>
-                        <div class="photo-box-centered ms-0 ms-md-auto position-relative"
-                          style="width: 120px; height: 150px; border: 2px dashed #8b1a2e; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; cursor: pointer;"
-                          onclick="document.getElementById('photograph').click()">
-                          <img id="photoPreview"
-                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='150' viewBox='0 0 120 150'%3E%3Crect width='100%25' height='100%25' fill='%23fafafa'/%3E%3C/svg%3E"
-                            alt="Upload" style="width: 100%; height: 100%; object-fit: cover;" />
-                          <div class="upload-placeholder" style="position: absolute; text-align: center;">
-                            <img
-                              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23bbb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/%3E%3Ccircle cx='12' cy='13' r='4'/%3E%3C/svg%3E"
-                              style="display: block; margin: 0 auto 5px;" />
-                          </div>
-                        </div>
-                        <input type="file" name="photograph" id="photograph" class="d-none" accept="image/*"
-                          onchange="previewUserPhoto(event)" />
-                        <div class="error-msg text-danger small mt-1" id="err_photograph"></div>
+                  <!-- 1. Admission Year Badge (Top Center) -->
+                  <div class="col-12 mb-3">
+                    <div class="d-flex justify-content-center align-items-center px-1">
+                      <div class="header-badge"
+                        style="border: 1.5px solid var(--mcc-maroon); padding: 4px 15px; border-radius: 4px; background: #fff;">
+                        <span class="text-uppercase fw-bold"
+                          style="font-size: 0.8rem; color: var(--mcc-maroon); letter-spacing: 0.5px;">
+                          Admission: <span id="dynamicYearLabel" style="color: #000;">Loading...</span>
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Rest of Step 1 dynamic fields -->
+                  <!-- Entire step rendered dynamically to respect dashboard order -->
                   <div class="col-12">
-                    <div class="row g-4" id="dynamicFieldsStep1">
-                      <!-- Dynamic Fields for Step 1 (except pupil_name) -->
-                    </div>
+                    <div class="row align-items-end g-4" id="dynamicFieldsStep1"></div>
                   </div>
                 </div>
               </section>
@@ -221,19 +188,20 @@
                   <!-- Dynamic Fields for Step 4 (Marks) -->
                 </div>
 
-                <div class="review-summary-card mb-4 bg-light border p-4 rounded-4 shadow-sm">
+                <!-- <div class="review-summary-card mb-4 bg-light border p-4 rounded-4 shadow-sm">
                   <h4 class="small fw-bold text-uppercase opacity-75 mb-3">Declaration of Truth</h4>
                   <p class="small text-secondary mb-0">I hereby certify that all information provided in this
                     application is accurate and complete to the best of my knowledge. I understand that any false
                     information may lead to the rejection of this application.</p>
-                </div>
+                </div> -->
 
                 <div class="declaration-checklist">
                   <div class="check-item-modern p-3 border rounded-3 mb-3 transition-all d-flex align-items-center">
                     <input type="checkbox" class="form-check-input ms-0 me-3 mt-0 flex-shrink-0"
                       name="declaration_agreed" id="decl1" value="1" />
-                    <label for="decl1" class="mb-0">I declare that the above statements are true and correct to my best
-                      knowledge.</label>
+                    <label for="decl1" class="mb-0">I hereby certify that all information provided in this
+                      application is accurate and complete to the best of my knowledge. I understand that any false
+                      information may lead to the rejection of this application.</label>
                   </div>
                   <div class="error-msg" id="err_declaration"></div>
                 </div>
@@ -265,9 +233,18 @@
     <div class="premium-modal text-center p-5 bg-white rounded-5 shadow-2xl">
       <div class="success-lottie mb-4"><span>✨</span></div>
       <h2 class="fw-bold fs-2 mb-3">Submission Success!</h2>
-      <p class="text-secondary mb-4">Your application for admission has been received. Our administrative team will
-        review it shortly.</p>
-      <button class="btn btn-premium-maroon w-100 py-3 rounded-pill fs-5" onclick="closeModal()">Close</button>
+
+      <div class="serial-no-badge mb-4 p-3 rounded-4"
+        style="background: #fdf2f4; border: 1px dashed var(--mcc-maroon);">
+        <span class="text-muted d-block small text-uppercase fw-bold mb-1">Application Reference No.</span>
+        <span class="h4 fw-bold mb-0" id="serialNoDisplay"
+          style="color: var(--mcc-maroon); letter-spacing: 1px;">Generating...</span>
+      </div>
+
+      <p class="text-secondary mb-4">Your application has been received. Please note down your <b>Reference Number</b>
+        for future tracking.</p>
+      <button class="btn btn-premium-maroon w-100 py-3 rounded-pill fs-5 shadow-sm" onclick="closeModal()">Back to
+        Home</button>
     </div>
   </div>
 

@@ -8,26 +8,42 @@ const formId = urlParams.get('formId') || 2; // Default to XI/XII if none
 document.addEventListener('DOMContentLoaded', async () => {
   await loadFormInfo();
   await loadDynamicFields();
+  initTamilTransliteration(); // Must be after fields are rendered
+  await fetchSerialNo();
   initFormLogic();
 });
+
+async function fetchSerialNo() {
+  try {
+    const res = await fetch('/api/next-serial?t=' + Date.now());
+    const data = await res.json();
+    if (data.success) {
+      // Only update the sticky header serial display
+      const hEl = id('headerSerialDisplay');
+      if (hEl) hEl.textContent = data.serialNo;
+    }
+  } catch (e) {
+    console.error('Serial No fetch error', e);
+  }
+}
 
 async function loadFormInfo() {
   try {
     const res = await fetch('/api/settings?t=' + Date.now());
     const s = await res.json();
-    
+
     const formsRes = await fetch('/api/forms');
     const forms = await formsRes.json();
     const currentForm = forms.find(f => f.id == formId);
 
     const stitle = id('siteTitle'); if (stitle && s.site_title) stitle.textContent = s.site_title;
     const ssub = id('siteSubtitle'); if (ssub && s.site_subtitle) ssub.textContent = s.site_subtitle;
-    
+
     // Update Sidebar/Header Logos
     if (s.logo_path) {
-        document.querySelectorAll('.brand-logo, .footer-logo img').forEach(img => {
-            img.src = s.logo_path + '?t=' + Date.now();
-        });
+      document.querySelectorAll('.brand-logo, .footer-logo img').forEach(img => {
+        img.src = s.logo_path + '?t=' + Date.now();
+      });
     }
 
     // Update School Info in sidebar if exists
@@ -35,16 +51,25 @@ async function loadFormInfo() {
     if (brandName && s.site_title) brandName.textContent = s.site_title;
     const brandTag = document.querySelector('.sidebar-tagline');
     if (brandTag && s.site_subtitle) brandTag.textContent = s.site_subtitle;
-    
-    const ftitle = id('formTitle'); 
+
+    const ftitle = id('formTitle');
     if (ftitle) {
       const perFormTitle = formId == 1 ? s.form1_title : s.form2_title;
       ftitle.textContent = perFormTitle || s.form_title || (currentForm ? currentForm.name : 'APPLICATION FOR ADMISSION');
     }
-    
-    const fsub = id('formSubtitle'); 
-    if (fsub) fsub.textContent = currentForm ? currentForm.description : s.form_subtitle;
-    
+
+    const yearLabel = id('dynamicYearLabel');
+    if (yearLabel && s.admission_year) yearLabel.textContent = s.admission_year;
+
+
+    const fsub = id('formSubtitle');
+    if (fsub) {
+      // If it's a serial number placeholder, don't overwrite it with generic text
+      if (!fsub.id === 'headerSerialDisplay') {
+        fsub.textContent = currentForm ? currentForm.description : s.form_subtitle;
+      }
+    }
+
     const footer = id('footerText'); if (footer && s.footer_text) footer.textContent = s.footer_text;
     const logo = id('siteLogo'); if (logo && s.logo_path) logo.src = s.logo_path;
   } catch (e) { console.error('CMS Settings load error', e); }
@@ -61,19 +86,13 @@ async function loadDynamicFields() {
       if (stepsGroup[f.step]) stepsGroup[f.step].push(f);
     });
 
-    // Step 1: render pupil_name separately into the name container (left side)
-    const nameContainer = id('step1NameContainer');
+    // Step 1: Render everything dynamically
+    // Step 1: Render everything dynamically as per dashboard order
     const step1Fields = stepsGroup[1];
-    const nameField = step1Fields.find(f => f.field_name === 'pupil_name');
-    const restOfStep1 = step1Fields.filter(f => f.field_name !== 'pupil_name');
-
-    if (nameContainer && nameField) {
-      const nf = { ...nameField, column_width: 12 };
-      nameContainer.innerHTML = `<div class="row">${renderField(nf)}</div>`;
-    }
-
     const step1Container = id('dynamicFieldsStep1');
-    if (step1Container) step1Container.innerHTML = restOfStep1.map(f => renderField(f)).join('');
+    if (step1Container) {
+      step1Container.innerHTML = step1Fields.map(f => renderField(f)).join('');
+    }
 
     // Steps 2-4: render normally
     for (let s = 2; s <= 4; s++) {
@@ -89,19 +108,24 @@ async function loadDynamicFields() {
         if (navItem) navItem.style.display = 'none';
       }
     }
-
-  } catch (e) { console.error('Dynamic fields load error', e); }
+  } catch (e) {
+    console.error('Dynamic fields load error', e);
+  }
 }
 
-
+window.updateIncomeVal = (name) => {
+  const c = id(`curr_${name}`).value;
+  const v = id(`val_${name}`).value;
+  id(name).value = v ? `${c} ${v}` : '';
+};
 window.previewUserPhoto = previewUserPhoto;
 function previewUserPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   const errEl = id('err_photograph');
   if (errEl) errEl.textContent = '';
-  
+
   const reader = new FileReader();
   reader.onload = (e) => {
     id('photoPreview').src = e.target.result;
@@ -116,39 +140,72 @@ function renderField(f) {
   const fname = f.field_name.toLowerCase();
 
   let extraAttrs = reqAttr;
-  
+
   // Real-time digit locks to completely prevent text input
+  // Note: field names use 'aadhaar' (double-a), so regex must match both spellings
   if (/mobile|phone|whatsapp/.test(fname)) {
-      extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" pattern="\\d{10}" inputmode="numeric"`;
-  } else if (/aadhar/.test(fname)) {
-      extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12);" pattern="\\d{12}" inputmode="numeric"`;
+    extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" pattern="\\d{10}" inputmode="numeric"`;
+  } else if (/aadhaar|aadhar/.test(fname)) {
+    extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 12);" pattern="\\d{12}" inputmode="numeric" maxlength="12"`;
   } else if (/pin_?code/.test(fname)) {
-      extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" pattern="\\d{6}" inputmode="numeric"`;
+    extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" pattern="\\d{6}" inputmode="numeric"`;
   } else if ((f.field_type === 'number' || /income|mark|year/.test(fname)) && !/id_mark|identifi|personal/.test(fname)) {
-      extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9.]/g, '');" inputmode="decimal"`;
+    extraAttrs += ` oninput="this.value = this.value.replace(/[^0-9.]/g, '');" inputmode="decimal"`;
   }
 
   if (['text', 'email', 'tel', 'number', 'date', 'url'].includes(f.field_type)) {
     let finalType = f.field_type;
-    // Override strict digit fields to 'tel' to ensure regex block works evenly across mobile browsers
-    if ((/mobile|phone|whatsapp|aadhar|pin/.test(fname)) && finalType === 'number') finalType = 'tel'; 
-    // If the CMS accidentally set identification marks as 'number', strictly override to 'text'
+    if ((/mobile|phone|whatsapp|aadhaar|aadhar|pin/.test(fname)) && finalType === 'number') finalType = 'tel';
     if (/id_mark|identifi|personal/.test(fname)) finalType = 'text';
 
-    inputHtml = `<input type="${finalType}" class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" placeholder="${f.placeholder || ''}" ${extraAttrs} />`;
+    if (fname.includes('income')) {
+        // Special case for Income fields: INR/Dollar dropdown + Number input
+        inputHtml = `
+          <div class="input-group">
+            <select class="form-select border-maroon-thin" style="max-width: 85px; font-weight: 600; background-color: #fcfcfc;" id="curr_${f.field_name}" onchange="updateIncomeVal('${f.field_name}')">
+              <option value="INR">INR</option>
+              <option value="USD">USD ($)</option>
+            </select>
+            <input type="tel" class="form-control premium-input" id="val_${f.field_name}" placeholder="Amount" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateIncomeVal('${f.field_name}')" ${reqAttr} />
+            <input type="hidden" name="${f.field_name}" id="${f.field_name}" ${reqAttr} />
+          </div>
+        `;
+    } else {
+        inputHtml = `<input type="${finalType}" class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" placeholder="${f.placeholder || ''}" ${extraAttrs} />`;
+    }
   } else if (f.field_type === 'textarea') {
     inputHtml = `<textarea class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" rows="2" placeholder="${f.placeholder || ''}" ${extraAttrs}></textarea>`;
   } else if (f.field_type === 'select') {
     const opts = (f.options || '').split(',').map(o => `<option value="${o.trim()}">${o.trim()}</option>`).join('');
-    inputHtml = `<select class="form-control premium-input form-select" name="${f.field_name}" id="${f.field_name}" ${extraAttrs}>
+    inputHtml = `<select class="form-select" name="${f.field_name}" id="${f.field_name}" ${extraAttrs} style="height: 52px; border: 1.5px solid #ddd; background-color: #fff; cursor: pointer; position: relative; z-index: 10;">
       <option value="" disabled selected>${f.placeholder || 'Select...'}</option>
       ${opts}
     </select>`;
+  } else if (f.field_type === 'photograph') {
+    return `
+      <div class="col-md-${f.column_width || 4} mb-3">
+        <div class="text-center text-md-end">
+           <span class="d-block mb-2 fw-bold text-muted " style="font-size: 0.75rem;">Affix Recent Passport Size Photograph ${star}</span>
+           <div class="photo-box-centered mx-auto mx-md-0 position-relative " 
+                style="float:right; width: 105px; height: 130px; border: 2px dashed #8b1a2e; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; cursor: pointer;"
+                onclick="document.getElementById('photograph').click()">
+              <img id="photoPreview" 
+                   src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='105' height='130' viewBox='0 0 105 130'%3E%3Crect width='100%25' height='100%25' fill='%23fafafa'/%3E%3C/svg%3E" 
+                   alt="Upload" style="width: 100%; height: 100%; object-fit: cover;" />
+              <div class="upload-placeholder" style="position: absolute; text-align: center;">
+                <i class="fa-solid fa-camera" style="color:#ccc; font-size:20px;"></i>
+              </div>
+           </div>
+           <input type="file" name="photograph" id="photograph" class="d-none" accept="image/*" onchange="previewUserPhoto(event)">
+           <div class="error-msg text-danger small mt-1" id="err_photograph"></div>
+        </div>
+      </div>
+    `;
   }
 
   const colWidth = f.column_width || (f.field_type === 'textarea' ? 12 : 6);
   const colClass = `col-md-${colWidth}`;
-  
+
   return `
     <div class="${colClass} mb-3">
       <div class="premium-field">
@@ -206,12 +263,19 @@ function initFormLogic() {
     try {
       const formData = new FormData(form);
       formData.append('form_id', formId); // Include the selected form ID
-      const res = await fetch('/api/apply', { 
-        method: 'POST', 
+      const res = await fetch('/api/apply', {
+        method: 'POST',
         body: formData
       });
       const data = await res.json();
-      if (data.success) { id('successModal').classList.add('active'); form.reset(); }
+      if (data.success) {
+        if (data.serialNo) {
+          const sNoDisplay = id('serialNoDisplay');
+          if (sNoDisplay) sNoDisplay.textContent = data.serialNo;
+        }
+        id('successModal').classList.add('active');
+        form.reset();
+      }
       else alert(data.message);
     } catch (err) { alert('Network error'); }
     finally { submitBtn.disabled = false; submitBtn.textContent = 'Finish & Submit'; }
@@ -220,7 +284,7 @@ function initFormLogic() {
   function validateStep(sNum) {
     clearAllErrors();
     let isValid = true;
-    
+
     // Validate photograph only on Step 1
     if (sNum === 1) {
       if (!id('photograph').files[0]) {
@@ -234,23 +298,23 @@ function initFormLogic() {
       if (!el) return;
       const fname = f.field_name.toLowerCase();
       const val = el.value.trim();
-      
+
       if (f.required && !val) {
         isValid = false; showError(`err_${f.field_name}`, 'Required field'); el.classList.add('error'); return;
       }
-      
+
       if (val) {
         if (f.field_type === 'email' && !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(val)) {
-            isValid = false; showError(`err_${f.field_name}`, 'Invalid email format'); el.classList.add('error');
+          isValid = false; showError(`err_${f.field_name}`, 'Invalid email format'); el.classList.add('error');
         }
         if (/mobile|phone|whatsapp/.test(fname) && val.length !== 10) {
-            isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 10 digits'); el.classList.add('error');
+          isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 10 digits'); el.classList.add('error');
         }
-        if (/aadhar/.test(fname) && val.length !== 12) {
-            isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 12 digits'); el.classList.add('error');
+        if (/aadhaar|aadhar/.test(fname) && val.length !== 12) {
+          isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 12 digits'); el.classList.add('error');
         }
         if (/pin_?code/.test(fname) && val.length !== 6) {
-            isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 6 digits'); el.classList.add('error');
+          isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 6 digits'); el.classList.add('error');
         }
       }
     });
@@ -270,3 +334,131 @@ function initFormLogic() {
 }
 
 function closeModal() { id('successModal').classList.remove('active'); window.location.reload(); }
+
+// ── TAMIL PHONETIC TRANSLITERATION (Local Engine — No API needed) ──────────────
+// Converts English phonetic typing → Tamil Unicode in real-time
+// Example: "vinith kumar" → "விநித் குமார்"
+// Tip: use double vowels for long sounds: aa=ஆ, ii=ஈ, uu=ஊ, ee=ஈ
+
+function phoneticToTamil(word) {
+  if (!word || !/[a-zA-Z]/.test(word)) return word;
+
+  const low = word.toLowerCase();
+  const virama = '்'; // U+0BCD
+
+  // Consonant BASE chars (without virama — added when needed)
+  const CONS = [
+    ['ksh', 'க்ஷ'], ['ngk', 'ங்க'], ['nch', 'ஞ்ச'],
+    ['zh', 'ழ'], ['sh', 'ஷ'], ['th', 'த'], ['dh', 'த'],
+    ['tr', 'ற'], ['dr', 'ற'], ['ch', 'ச'],
+    ['ng', 'ங'], ['nj', 'ஞ'], ['ny', 'ஞ'],
+    ['k', 'க'], ['g', 'க'], ['c', 'ச'], ['j', 'ஜ'],
+    ['t', 'ட'], ['d', 'ட'],
+    ['n', 'ந'], ['p', 'ப'], ['b', 'ப'], ['f', 'ப'],
+    ['m', 'ம'], ['y', 'ய'], ['r', 'ர'], ['l', 'ல'],
+    ['v', 'வ'], ['w', 'வ'], ['s', 'ஸ'], ['h', 'ஹ'],
+    ['L', 'ள'], ['R', 'ற'], ['N', 'ண'],
+  ];
+
+  // Vowel SIGNS (attached to consonant base)
+  const VS = [
+    ['aa', 'ா'], ['ee', 'ீ'], ['ii', 'ீ'], ['oo', 'ூ'], ['uu', 'ூ'],
+    ['ae', 'ே'], ['ai', 'ை'], ['oa', 'ோ'], ['au', 'ௌ'], ['ow', 'ௌ'],
+    ['A', 'ா'], ['E', 'ே'], ['I', 'ீ'], ['O', 'ோ'], ['U', 'ூ'],
+    ['i', 'ி'], ['u', 'ு'], ['e', 'ெ'], ['o', 'ொ'],
+    ['a', ''],  // inherent vowel — no sign needed
+  ];
+
+  // Independent VOWELS (when no preceding consonant)
+  const IV = [
+    ['aa', 'ஆ'], ['ee', 'ஈ'], ['ii', 'ஈ'], ['oo', 'ஊ'], ['uu', 'ஊ'],
+    ['ae', 'ஏ'], ['ai', 'ஐ'], ['oa', 'ஓ'], ['au', 'ஔ'], ['ow', 'ஔ'],
+    ['A', 'ஆ'], ['E', 'ஏ'], ['I', 'ஈ'], ['O', 'ஓ'], ['U', 'ஊ'],
+    ['i', 'இ'], ['u', 'உ'], ['e', 'எ'], ['o', 'ஒ'], ['a', 'அ'],
+  ];
+
+  let result = '';
+  let i = 0;
+  let pending = null; // pending consonant base
+
+  while (i < low.length) {
+    let matched = false;
+
+    // 1. Try consonant (longest match first)
+    for (const [pat, base] of CONS) {
+      if (low.startsWith(pat, i)) {
+        if (pending !== null) result += pending + virama; // close prev consonant
+        pending = base;
+        i += pat.length;
+        matched = true;
+        break;
+      }
+    }
+    if (matched) continue;
+
+    // 2. Try vowel (longest match first)
+    const vowelList = pending !== null ? VS : IV;
+    for (const [pat, sign] of vowelList) {
+      if (low.startsWith(pat, i)) {
+        if (pending !== null) {
+          result += pending + sign; // consonant + vowel sign
+          pending = null;
+        } else {
+          result += sign; // independent vowel
+        }
+        i += pat.length;
+        matched = true;
+        break;
+      }
+    }
+    if (matched) continue;
+
+    // 3. Unknown char — flush pending and pass through
+    if (pending !== null) { result += pending + virama; pending = null; }
+    result += low[i];
+    i++;
+  }
+
+  // Flush any trailing consonant
+  if (pending !== null) result += pending + virama;
+  return result;
+}
+
+function initTamilTransliteration() {
+  const field = document.getElementById('pupil_name_tamil');
+  if (!field) return;
+
+  field.placeholder = '"vinith kumaar" → வினித் குமார்';
+  field.setAttribute('lang', 'ta');
+  field.removeAttribute('required'); // Also remove via JS for safety
+
+  // Convert word-by-word as user types spaces (instant result per word)
+  field.addEventListener('keydown', function (e) {
+    if (e.key === ' ') {
+      e.preventDefault();
+      const val = this.value;
+      // Only convert if it has English chars (pure Tamil words stay untouched)
+      if (/[a-zA-Z]/.test(val)) {
+        const lastSpaceIdx = val.lastIndexOf(' ');
+        const lastWord = val.slice(lastSpaceIdx + 1);
+        if (lastWord && /[a-zA-Z]/.test(lastWord)) {
+          const converted = phoneticToTamil(lastWord);
+          this.value = val.slice(0, lastSpaceIdx + 1) + converted + ' ';
+        } else {
+          this.value = val + ' ';
+        }
+      } else {
+        this.value = val + ' ';
+      }
+    }
+  });
+
+  // On blur: convert any remaining English word at end
+  field.addEventListener('blur', function () {
+    const val = this.value.trim();
+    if (!val || !/[a-zA-Z]/.test(val)) return;
+    // Convert remaining words
+    const words = val.split(' ');
+    this.value = words.map(w => /[a-zA-Z]/.test(w) ? phoneticToTamil(w) : w).join(' ');
+  });
+}

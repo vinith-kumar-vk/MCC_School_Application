@@ -218,9 +218,9 @@ h4,
 }
 
 .form-content-wrapper {
-  max-width: 1000px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 60px;
+  padding: 0 50px;
 }
 
 /* Progress Bar */
@@ -553,7 +553,8 @@ h4,
 /* ── Tablet & Mobile (≤768px) ── */
 @media (max-width: 768px) {
 
-  body, html {
+  body,
+  html {
     overflow: auto;
   }
 
@@ -577,7 +578,7 @@ h4,
     height: auto;
     padding: 14px 20px 12px;
     border-right: none;
-    border-bottom: 3px solid rgba(255,255,255,0.15);
+    border-bottom: 3px solid rgba(255, 255, 255, 0.15);
     overflow: visible;
     position: sticky;
     top: 0;
@@ -593,7 +594,7 @@ h4,
     margin-bottom: 10px !important;
   }
 
-  .brand-section > div {
+  .brand-section>div {
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
@@ -626,8 +627,8 @@ h4,
     letter-spacing: 0.04em;
     margin: 0;
     line-height: 1.4;
-    border-top: 1px solid rgba(255,255,255,0.15);
-    border-bottom: 1px solid rgba(255,255,255,0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     padding: 8px 0;
   }
 
@@ -664,8 +665,8 @@ h4,
     gap: 8px;
     margin-bottom: 0;
     padding: 7px 14px;
-    background: rgba(255,255,255,0.1);
-    border: 1.5px solid rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
     border-radius: 50px;
     opacity: 0.6;
     cursor: pointer;
@@ -678,8 +679,8 @@ h4,
   }
 
   .nav-item.completed {
-    background: rgba(255,255,255,0.18);
-    border-color: rgba(255,255,255,0.4);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.4);
     opacity: 0.85;
   }
 
@@ -690,7 +691,7 @@ h4,
     font-weight: 700;
     border: none;
     background: transparent;
-    color: rgba(255,255,255,0.7);
+    color: rgba(255, 255, 255, 0.7);
     flex-shrink: 0;
   }
 
@@ -707,13 +708,13 @@ h4,
   }
 
   .nav-item.completed .nav-num {
-    color: rgba(255,255,255,0.9);
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .nav-label {
     font-size: 12px;
     font-weight: 600;
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
     white-space: nowrap;
   }
 
@@ -755,7 +756,7 @@ h4,
     position: sticky;
     top: var(--mobile-sidebar-height, 0px);
     z-index: 100;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 
   .form-title-group h1 {

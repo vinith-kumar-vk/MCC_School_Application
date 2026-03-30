@@ -344,6 +344,15 @@
             <input type="text" id="set_form2_title" class="cms-input"
               placeholder="APPLICATION FOR ADMISSION (CLASS XI to XII)">
           </div>
+          <div class="cms-field" style="margin:0; grid-column: span 2;">
+            <label>Admission Year Range <span style="color:#8B1A2E; font-size:11px;">(Appears in Header & Serial No)</span></label>
+            <input type="text" id="set_admission_year" class="cms-input"
+              placeholder="e.g., 2026 - 2031"
+              title="Enter admission cycle in YYYY - YYYY format. This appears in serial numbers: MCC/2026 - 2031/0001">
+            <small style="color:#64748b; font-size:11px; margin-top:6px; display:block;">
+              &#128204; Example: <strong>2026 - 2031</strong> &rarr; Serial No: <strong>MCC/2026 - 2031/0001</strong>
+            </small>
+          </div>
         </div>
         <button class="cms-save-btn" onclick="saveFormGlobalSettings()" style="margin-top:20px;"><i
             class="fa-solid fa-floppy-disk"></i> Save Form Titles</button>
@@ -454,6 +463,7 @@
             <option value="select">Dropdown</option>
             <option value="number">Number</option>
             <option value="date">Date</option>
+            <option value="photograph">Photograph Upload</option>
           </select>
         </div>
         <div class="cms-field" id="row_field_name">
@@ -474,13 +484,18 @@
             <option value="12">Full Width (1 per Row)</option>
             <option value="6">Half Width (2 per Row)</option>
             <option value="4">One Third (3 per Row)</option>
+            <option value="3">One Fourth (4 per Row)</option>
           </select>
         </div>
         <div class="cms-field" style="display:flex; align-items:center; gap:10px;">
           <input type="checkbox" id="fld_required" class="form-check-input">
           <label for="fld_required" style="margin:0;">Mark as Required</label>
         </div>
-        <input type="hidden" id="fld_order" value="1">
+        <div class="cms-field">
+          <label>Display Order (Priority Number)</label>
+          <input type="number" id="fld_order" class="cms-input" placeholder="e.g. 1">
+          <small style="color:#64748b; font-size:11px;">Smaller numbers appear first.</small>
+        </div>
         <input type="hidden" id="fld_active" value="1">
         <button class="cms-save-btn" onclick="saveField()"><i class="fa-solid fa-floppy-disk"></i> Save Field</button>
       </div>

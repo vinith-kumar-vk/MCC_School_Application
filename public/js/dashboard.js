@@ -141,7 +141,7 @@ async function loadSiteSettings() {
   try {
     const res = await fetch('/api/settings?t=' + Date.now());
     const s = await res.json();
-    const fields = ['site_title','site_subtitle','site_location','site_contact','landing_title','form_title','form_subtitle','footer_text','btn1_label','btn2_label','form1_title','form2_title'];
+    const fields = ['site_title','site_subtitle','site_location','site_contact','landing_title','form_title','form_subtitle','footer_text','btn1_label','btn2_label','form1_title','form2_title','admission_year'];
     fields.forEach(f => { if(id('set_'+f)) id('set_'+f).value = s[f] || ''; });
     if(id('logoPreview') && s.logo_path) id('logoPreview').src = s.logo_path + '?t=' + Date.now();
   } catch (e) { console.error('Settings load error', e); }
@@ -172,10 +172,28 @@ async function saveLandingPageSettings() {
 }
 
 async function saveFormGlobalSettings() {
+  let cycleVal = (id('set_admission_year').value || '').trim();
+
+  // Guard: if admin accidentally pastes full serial like "MCC/2026 - 2031/0001"
+  // strip it down to just the year part "2026 - 2031"
+  if (cycleVal.toUpperCase().startsWith('MCC/')) {
+    // Extract middle part: MCC/<cycle>/<seq> → <cycle>
+    const parts = cycleVal.split('/');
+    if (parts.length >= 2) cycleVal = parts[1].trim();
+  }
+  // Also reject if it contains no digit range pattern at all
+  if (cycleVal && !/^\d{4}/.test(cycleVal)) {
+    showToast('⚠️ Admission Cycle must be in format: 2026 - 2031');
+    return;
+  }
+
   const p = { 
     form1_title: id('set_form1_title').value,
-    form2_title: id('set_form2_title').value
+    form2_title: id('set_form2_title').value,
+    admission_year: cycleVal
   };
+  // Update input field to show the cleaned value
+  id('set_admission_year').value = cycleVal;
   await saveSettings(p);
 }
 
@@ -256,7 +274,7 @@ function renderFieldsTable(fields) {
       <td class="drag-handle" style="color:#cbd5e1; text-align:center; padding: 12px 0; ${activeStepFilter > 0 ? 'cursor:grab;' : ''}">
         ${activeStepFilter > 0 ? '<i class="fa-solid fa-grip-vertical"></i>' : ''}
       </td>
-      <td class="order-label" style="text-align:center; font-size:13px; color:#64748b; font-weight: 500;">${i+1}</td>
+      <td class="order-label" style="text-align:center; font-size:13px; color:#64748b; font-weight: 500;">${f.sort_order}</td>
       <td style="text-align:center;">
         <span class="badge" style="background:#f1f5f9; color:#475569; font-size:11px; padding: 4px 10px; border-radius: 6px; font-weight: 600;">STEP ${f.step}</span>
       </td>
@@ -336,10 +354,14 @@ function viewDetail(id) {
             <div>
               <h1 style="margin:0; font-size:32px; font-weight:800; color:#1e293b; letter-spacing:-0.5px;">${esc(d.pupil_name || 'N/A')}</h1>
               <p style="margin:4px 0 12px; color:#64748b; font-size:16px;"><i class="fa-solid fa-file-alt"></i> Form: <span style="color:maroon; font-weight:bold;">${esc(app.form_name)}</span></p>
-              <div style="display:flex; gap:12px;">
-                 <span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">STATUS: ${app.status}</span>
-                 <span class="badge" style="background:#f1f5f9; color:#475569;">SERIAL: ${app.serial_no || 'N/A'}</span>
-              </div>
+               <div style="display:flex; gap:12px; align-items:center;">
+                  <span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">STATUS: ${app.status}</span>
+                  <div id="serialEditContainer" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:4px 12px; border-radius:100px; border:1px solid #e2e8f0;">
+                    <span style="font-size:11px; font-weight:700; color:#475569;">SERIAL:</span>
+                    <span id="serialText" style="font-weight:700; color:#1e293b; font-size:13px;">${esc(app.serial_no || 'N/A')}</span>
+                    <button onclick="enableSerialEdit(${app.id}, '${esc(app.serial_no || '')}')" style="background:none; border:none; color:maroon; cursor:pointer; font-size:12px; padding:0 4px;"><i class="fa-solid fa-pen"></i></button>
+                  </div>
+               </div>
             </div>
           </div>
         </div>
@@ -373,8 +395,35 @@ function viewDetail(id) {
 async function updateStatus(id, status) {
   try {
     const res = await fetch(`/api/applications/${id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status}) });
-    if(res.ok) { showToast('Status updated!'); closeDetailModal(); loadAllUsers(); loadStats(); }
+    if(res.ok) { showToast('Status updated!'); viewDetail(id); loadAllUsers(); loadStats(); }
   } catch(e) { showToast('Update failed'); }
+}
+
+function enableSerialEdit(appId, currentSerial) {
+  const container = id('serialEditContainer');
+  if (!container) return;
+  container.innerHTML = `
+    <input type="text" id="editSerialInput" value="${esc(currentSerial)}" style="border:1px solid maroon; border-radius:4px; padding:2px 8px; font-size:12px; width:140px; font-weight:700;">
+    <button onclick="saveSerial(${appId})" style="background:maroon; color:white; border:none; border-radius:4px; padding:2px 8px; cursor:pointer; font-size:11px; font-weight:700;">SAVE</button>
+    <button onclick="viewDetail(${appId})" style="background:#cbd5e1; color:#1e293b; border:none; border-radius:4px; padding:2px 8px; cursor:pointer; font-size:11px; font-weight:700;">X</button>
+  `;
+}
+
+async function saveSerial(id) {
+  const newSerial = document.getElementById('editSerialInput')?.value;
+  if (!newSerial) return showToast('Serial cannot be empty');
+  try {
+    const res = await fetch(`/api/applications/${id}/serial`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ serial: newSerial })
+    });
+    if (res.ok) {
+      showToast('Serial updated!');
+      viewDetail(id); // Reload the detailed view
+      loadAllUsers(); // Reload the main table listing
+    }
+  } catch (e) { showToast('Update failed'); }
 }
 
 // Helper tool to safely fetch an image and convert it to Base64 to bypass CORS/html2canvas blocking
@@ -608,8 +657,9 @@ function openFieldModal(fieldId) {
   if(id('fld_step')) id('fld_step').value = '1';
   if(id('fld_type')) id('fld_type').value = 'text';
   if(id('fld_width')) id('fld_width').value = '6';
-  if(id('fld_required')) id('fld_required').checked = true;
+  id('fld_required') && (id('fld_required').checked = true);
   id('row_field_name') && (id('row_field_name').style.display = 'block');
+  if(id('fld_order')) id('fld_order').value = '99'; 
   id('row_options') && (id('row_options').style.display = 'none');
   id('fieldModalTitle').textContent = fieldId ? 'Edit Field' : 'Add New Field';
 
@@ -623,6 +673,7 @@ function openFieldModal(fieldId) {
       if(id('fld_options')) id('fld_options').value = f.options || '';
       if(id('fld_width')) id('fld_width').value = f.column_width || 6;
       if(id('fld_required')) id('fld_required').checked = !!f.required;
+      if(id('fld_order')) id('fld_order').value = f.sort_order || 99;
       id('row_field_name').style.display = 'none'; 
       if (f.field_type === 'select') id('row_options') && (id('row_options').style.display = 'block');
       modal.classList.add('active');
@@ -654,7 +705,7 @@ async function saveField() {
     required: id('fld_required')?.checked ? 1 : 0,
     options: id('fld_options')?.value?.trim() || null,
     column_width: parseInt(id('fld_width')?.value || '6'),
-    sort_order: 99
+    sort_order: parseInt(id('fld_order')?.value || '99')
   };
 
   if (!body.label) { showToast('Label is required'); return; }

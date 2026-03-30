@@ -92,7 +92,8 @@ const defaultSettings = [
   { key: 'landing_title', value: 'MCC CAMPUS Matriculation Higher Secondary School' },
   { key: 'footer_text', value: 'Copyright © 2024 MCC– Campus Matriculation Higher Secondary School' },
   { key: 'btn1_label', value: 'LKG to CLASS X ADMISSION' },
-  { key: 'btn2_label', value: 'CLASS XI & XII ADMISSION' }
+  { key: 'btn2_label', value: 'CLASS XI & XII ADMISSION' },
+  { key: 'admission_year', value: '2026 - 2031' }  // Admission cycle used in serial no. & form header
 ];
 
 
@@ -252,13 +253,40 @@ app.post('/api/apply', upload.single('photograph'), (req, res) => {
     const { form_id, ...formData } = req.body;
     const photograph_path = req.file ? '/uploads/' + req.file.filename : null;
 
-    db.prepare('INSERT INTO applications (form_id, form_data, photograph_path) VALUES (?, ?, ?)')
-      .run(form_id, JSON.stringify(formData), photograph_path);
+    // ── Generate Unique Application Serial Number ──
+    const cycleRow = db.prepare('SELECT value FROM site_settings WHERE key = ?').get('admission_year');
+    const curYear = new Date().getFullYear();
+    // If admission_year is not set, auto-generate a 5-year cycle (e.g., "2026 - 2031")
+    const admissionCycle = (cycleRow && cycleRow.value) ? cycleRow.value : `${curYear} - ${curYear + 5}`;
+    const countResult = db.prepare('SELECT COUNT(*) as count FROM applications').get();
+    const nextId = (countResult.count || 0) + 1;
+    const serialNo = `MCC/${admissionCycle}/${nextId.toString().padStart(4, '0')}`;
 
-    res.json({ success: true, message: 'Application submitted successfully!' });
+    db.prepare('INSERT INTO applications (form_id, serial_no, form_data, photograph_path) VALUES (?, ?, ?, ?)')
+      .run(form_id, serialNo, JSON.stringify(formData), photograph_path);
+
+    res.json({ 
+      success: true, 
+      message: 'Application submitted successfully!', 
+      serialNo: serialNo 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+  }
+});
+
+app.get('/api/next-serial', (req, res) => {
+  try {
+    const cycleRow = db.prepare('SELECT value FROM site_settings WHERE key = ?').get('admission_year');
+    const curYear = new Date().getFullYear();
+    const admissionCycle = (cycleRow && cycleRow.value) ? cycleRow.value : `${curYear} - ${curYear + 5}`;
+    const countResult = db.prepare('SELECT COUNT(*) as count FROM applications').get();
+    const nextId = (countResult.count || 0) + 1;
+    const serialNo = `MCC/${admissionCycle}/${nextId.toString().padStart(4, '0')}`;
+    res.json({ success: true, serialNo });
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 });
 
@@ -367,6 +395,16 @@ app.patch('/api/applications/:id/status', requireAuth, (req, res) => {
   const { status } = req.body;
   try {
     db.prepare('UPDATE applications SET status = ? WHERE id = ?').run(status, req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+app.patch('/api/applications/:id/serial', requireAuth, (req, res) => {
+  const { serial } = req.body;
+  try {
+    db.prepare('UPDATE applications SET serial_no = ? WHERE id = ?').run(serial, req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false });
@@ -484,6 +522,32 @@ app.put('/api/settings', requireAuth, (req, res) => {
   } catch (e) {
     res.status(500).json({ success: false });
   }
+});
+
+// ── TAMIL TRANSLITERATION PROXY ────────────────────────────────────────────────
+// Proxies to Google Input Tools to avoid CORS from browser
+app.get('/api/transliterate', (req, res) => {
+  const { text } = req.query;
+  if (!text || !text.trim()) return res.json({ result: '' });
+
+  const https = require('https');
+  const url = `https://inputtools.google.com/request?text=${encodeURIComponent(text.trim())}&itc=ta-t-i0-und&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8`;
+
+  https.get(url, (apiRes) => {
+    let data = '';
+    apiRes.on('data', chunk => data += chunk);
+    apiRes.on('end', () => {
+      try {
+        const parsed = JSON.parse(data);
+        // Response: ["SUCCESS", [["word", ["தமிழ்"], ...]]]
+        if (parsed[0] === 'SUCCESS' && parsed[1]?.[0]?.[1]?.[0]) {
+          res.json({ result: parsed[1][0][1][0] });
+        } else {
+          res.json({ result: text });
+        }
+      } catch (e) { res.json({ result: text }); }
+    });
+  }).on('error', () => res.json({ result: text }));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
