@@ -509,7 +509,20 @@ function viewDetail(id) {
       <div style="margin-top:40px; padding:24px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:12px; color:#64748b;">
           <i class="fa-solid fa-clock-rotate-left"></i>
-          <div><p style="margin:0; font-size:13px; font-weight:600;">Submitted On</p><p style="margin:0; font-size:12px;">${new Date(app.submitted_at).toLocaleString()}</p></div>
+          <div>
+            <p style="margin:0; font-size:13px; font-weight:600;">Submitted On</p>
+            <p style="margin:0; font-size:12px;">
+              ${(() => {
+                // Ensure the date is treated as UTC from the DB
+                const dateStr = app.submitted_at;
+                const date = new Date(dateStr + (dateStr.includes('Z') || dateStr.includes('+') ? '' : ' UTC'));
+                const timeStr = date.toLocaleString();
+                const tzStr = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const tzName = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(date).find(p => p.type === 'timeZoneName').value;
+                return `${timeStr} (${tzName})`;
+              })()}
+            </p>
+          </div>
         </div>
         <div style="display:flex; gap:16px;">
           <button class="btn" style="background:#78091E; color:white; padding:10px 24px; border-radius:8px; border:none; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;" onclick="printApplicationPDF()">
