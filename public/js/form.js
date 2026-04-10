@@ -154,8 +154,8 @@ function renderField(f) {
     if (/id_mark|identifi|personal/.test(fname)) finalType = 'text';
 
     if (fname.includes('income')) {
-        // Special case for Income fields: INR/Dollar dropdown + Number input
-        inputHtml = `
+      // Special case for Income fields: INR/Dollar dropdown + Number input
+      inputHtml = `
           <div class="input-group">
             <select class="form-select border-maroon-thin" style="max-width: 85px; font-weight: 600; background-color: #fcfcfc;" id="curr_${f.field_name}" onchange="updateIncomeVal('${f.field_name}')">
               <option value="INR">INR</option>
@@ -166,7 +166,7 @@ function renderField(f) {
           </div>
         `;
     } else {
-        inputHtml = `<input type="${finalType}" class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" placeholder="${f.placeholder || ''}" ${extraAttrs} />`;
+      inputHtml = `<input type="${finalType}" class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" placeholder="${f.placeholder || ''}" ${extraAttrs} />`;
     }
   } else if (f.field_type === 'textarea') {
     inputHtml = `<textarea class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" rows="2" placeholder="${f.placeholder || ''}" ${extraAttrs}></textarea>`;
@@ -284,9 +284,10 @@ function initFormLogic() {
     clearAllErrors();
     let isValid = true;
 
-    // Validate photograph only on Step 1
+    // Validate photograph only on Step 1 IF it is rendered/active
     if (sNum === 1) {
-      if (!id('photograph').files[0]) {
+      const photoInput = id('photograph');
+      if (photoInput && !photoInput.files[0]) {
         isValid = false; showError('err_photograph', 'Photograph is required');
       }
     }
@@ -427,7 +428,7 @@ function initTamilTransliteration() {
   const field = document.getElementById('pupil_name_tamil');
   if (!field) return;
 
-  field.placeholder = '"vinith kumaar" → வினித் குமார்';
+  field.placeholder = '"Name" → பெயர்';
   field.setAttribute('lang', 'ta');
   field.removeAttribute('required'); // Also remove via JS for safety
 

@@ -310,8 +310,8 @@
         </div>
         <div class="cms-field" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="cms-field" style="margin:0;">
-            <label>Button 1 Label <span style="color:#8B1A2E; font-size:11px;">(Form 1 – LKG–X)</span></label>
-            <input type="text" id="set_btn1_label" class="cms-input" placeholder="e.g. LKG to CLASS X ADMISSION">
+            <label>Button 1 Label <span style="color:#8B1A2E; font-size:11px;">(Form 1 – Pre-kg–X)</span></label>
+            <input type="text" id="set_btn1_label" class="cms-input" placeholder="e.g. Pre-kg to CLASS X ADMISSION">
           </div>
           <div class="cms-field" style="margin:0;">
             <label>Button 2 Label <span style="color:#8B1A2E; font-size:11px;">(Form 2 – XI–XII)</span></label>
@@ -335,9 +335,9 @@
           These titles appear on the respective public form pages.</p>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
           <div class="cms-field" style="margin:0;">
-            <label>Form 1 Title <span style="color:#8B1A2E; font-size:11px;">(LKG to Class X)</span></label>
+            <label>Form 1 Title <span style="color:#8B1A2E; font-size:11px;">(Pre-kg to Class X)</span></label>
             <input type="text" id="set_form1_title" class="cms-input"
-              placeholder="APPLICATION FOR ADMISSION (LKG to X)">
+              placeholder="APPLICATION FOR ADMISSION (Pre-kg to X)">
           </div>
           <div class="cms-field" style="margin:0;">
             <label>Form 2 Title <span style="color:#8B1A2E; font-size:11px;">(Class XI to XII)</span></label>
@@ -345,12 +345,12 @@
               placeholder="APPLICATION FOR ADMISSION (CLASS XI to XII)">
           </div>
           <div class="cms-field" style="margin:0; grid-column: span 2;">
-            <label>Admission Year Range <span style="color:#8B1A2E; font-size:11px;">(Appears in Header & Serial No)</span></label>
+            <label>Admission Year Range <span style="color:#8B1A2E; font-size:11px;">(Appears in Header & Admission No)</span></label>
             <input type="text" id="set_admission_year" class="cms-input"
               placeholder="e.g., 2026 - 2031"
-              title="Enter admission cycle in YYYY - YYYY format. This appears in serial numbers: MCC/2026 - 2031/0001">
+              title="Enter admission cycle in YYYY - YYYY format. This appears in admission numbers: MCC/2026/0001">
             <small style="color:#64748b; font-size:11px; margin-top:6px; display:block;">
-              &#128204; Example: <strong>2026 - 2031</strong> &rarr; Serial No: <strong>MCC/2026 - 2031/0001</strong>
+              &#128204; Example: <strong>2026 - 2031</strong> &rarr; Admission No: <strong>MCC/2026/0001</strong>
             </small>
           </div>
         </div>
@@ -402,6 +402,7 @@
                   <th style="min-width:200px;">LABEL</th>
                   <th style="width:100px; text-align:center;">TYPE</th>
                   <th style="width:60px; text-align:center;">REQ.</th>
+                  <th style="width:80px; text-align:center;">VISIBLE</th>
                   <th style="width:100px; text-align:right;">ACTIONS</th>
                 </tr>
               </thead>
@@ -523,7 +524,7 @@
         </div>
         <div class="cms-field">
           <label>Form Subtitle (Header Second Line)</label>
-          <input type="text" id="edit_form_subtitle" class="cms-input" placeholder="e.g., LKG to X ADMISSION FORM">
+          <input type="text" id="edit_form_subtitle" class="cms-input" placeholder="e.g., Pre-kg to X ADMISSION FORM">
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
           <button class="cms-save-btn" onclick="deleteForm()" style="background:#ef4444; margin:0; width:auto;"><i

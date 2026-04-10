@@ -39,6 +39,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
+    subtitle TEXT,
     is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -78,6 +79,12 @@ db.exec(`
   );
 `);
 
+try {
+  db.prepare('ALTER TABLE forms ADD COLUMN subtitle TEXT').run();
+} catch (e) {
+  // column might already exist, ignore
+}
+
 // Seed default site settings
 const defaultSettings = [
   { key: 'site_title', value: 'MCC CAMPUS MATRICULATION HIGHER SECONDARY SCHOOL' },
@@ -85,30 +92,36 @@ const defaultSettings = [
   { key: 'site_location', value: '#1, Air Force Road, East Tambaram, Chennai - 600059' },
   { key: 'site_contact', value: '044-2239 1620 | mcccampus.school91@gmail.com' },
   { key: 'form_title', value: 'APPLICATION FOR ADMISSION (CLASS XI to XII)' },
-  { key: 'form1_title', value: 'APPLICATION FOR ADMISSION (LKG to X)' },
+  { key: 'form1_title', value: 'APPLICATION FOR ADMISSION (Pre-kg to X)' },
   { key: 'form2_title', value: 'APPLICATION FOR ADMISSION (CLASS XI to XII)' },
   { key: 'form_subtitle', value: 'MCC Campus Matriculation Higher Secondary School traces its root as Campus Primary School in the premises of MCC in 1985. It is recognized by the Government of Tamil Nadu Matriculation Board of Education.' },
   { key: 'logo_path', value: '/images/logo.png' },
   { key: 'landing_title', value: 'MCC CAMPUS Matriculation Higher Secondary School' },
   { key: 'footer_text', value: 'Copyright © 2024 MCC– Campus Matriculation Higher Secondary School' },
-  { key: 'btn1_label', value: 'LKG to CLASS X ADMISSION' },
+  { key: 'btn1_label', value: 'Pre-kg to CLASS X ADMISSION' },
   { key: 'btn2_label', value: 'CLASS XI & XII ADMISSION' },
   { key: 'admission_year', value: '2026 - 2031' }  // Admission cycle used in serial no. & form header
 ];
 
 
-const insertSetting = db.prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)');
+// INSERT OR IGNORE: only set defaults for keys that don't already exist.
+// This prevents server restarts (nodemon) from wiping user-saved settings.
+const insertSetting = db.prepare('INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)');
 defaultSettings.forEach(s => insertSetting.run(s.key, s.value));
 
 // Seed default forms
 try {
   const formCount = db.prepare('SELECT COUNT(*) as c FROM forms').get().c;
   if (formCount === 0) {
-    db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS LKG to X)', 'LKG to X Admission Form');
-    db.prepare('INSERT INTO forms (name, description) VALUES (?, ?)').run('APPLICATION FOR ADMISSION (CLASS XI to XII)', 'XI and XII Admission Form');
+    db.prepare('INSERT INTO forms (name, subtitle, description) VALUES (?, ?, ?)').run('APPLICATION FOR ADMISSION (CLASS Pre-kg to X)', 'Pre-kg to X ADMISSION FORM', 'Pre-kg to X Admission Form');
+    db.prepare('INSERT INTO forms (name, subtitle, description) VALUES (?, ?, ?)').run('APPLICATION FOR ADMISSION (CLASS XI to XII)', 'XI to XII ADMISSION FORM', 'XI and XII Admission Form');
   } else {
-    // Fix existing DB record if it has old 'Lkg' casing
-    db.prepare("UPDATE forms SET name = 'APPLICATION FOR ADMISSION (CLASS LKG to X)' WHERE name LIKE '%Lkg%'").run();
+    // Migrate old names
+    db.prepare("UPDATE forms SET name = 'APPLICATION FOR ADMISSION (CLASS Pre-kg to X)' WHERE name LIKE '%LKG to X%'").run();
+    db.prepare("UPDATE forms SET name = 'APPLICATION FOR ADMISSION (CLASS Pre-kg to X)' WHERE name LIKE '%Lkg to X%'").run();
+    // Migrate old subtitles
+    db.prepare("UPDATE forms SET subtitle = 'Pre-kg to X ADMISSION FORM' WHERE id = 1 AND (subtitle IS NULL OR subtitle LIKE '%LKG%' OR subtitle LIKE '%Lkg%')").run();
+    db.prepare("UPDATE forms SET subtitle = 'XI to XII ADMISSION FORM' WHERE id = 2 AND (subtitle IS NULL OR subtitle = '')").run();
   }
 } catch (e) { console.error('Form seeding error:', e); }
 
@@ -256,11 +269,11 @@ app.post('/api/apply', upload.single('photograph'), (req, res) => {
     // ── Generate Unique Application Serial Number ──
     const cycleRow = db.prepare('SELECT value FROM site_settings WHERE key = ?').get('admission_year');
     const curYear = new Date().getFullYear();
-    // If admission_year is not set, auto-generate a 5-year cycle (e.g., "2026 - 2031")
     const admissionCycle = (cycleRow && cycleRow.value) ? cycleRow.value : `${curYear} - ${curYear + 5}`;
+    const startYear = admissionCycle.match(/\d{4}/)?.[0] || curYear;
     const countResult = db.prepare('SELECT COUNT(*) as count FROM applications').get();
     const nextId = (countResult.count || 0) + 1;
-    const serialNo = `MCC/${admissionCycle}/${nextId.toString().padStart(4, '0')}`;
+    const serialNo = `MCC/${startYear}/${nextId.toString().padStart(4, '0')}`;
 
     db.prepare('INSERT INTO applications (form_id, serial_no, form_data, photograph_path) VALUES (?, ?, ?, ?)')
       .run(form_id, serialNo, JSON.stringify(formData), photograph_path);
@@ -281,9 +294,10 @@ app.get('/api/next-serial', (req, res) => {
     const cycleRow = db.prepare('SELECT value FROM site_settings WHERE key = ?').get('admission_year');
     const curYear = new Date().getFullYear();
     const admissionCycle = (cycleRow && cycleRow.value) ? cycleRow.value : `${curYear} - ${curYear + 5}`;
+    const startYear = admissionCycle.match(/\d{4}/)?.[0] || curYear;
     const countResult = db.prepare('SELECT COUNT(*) as count FROM applications').get();
     const nextId = (countResult.count || 0) + 1;
-    const serialNo = `MCC/${admissionCycle}/${nextId.toString().padStart(4, '0')}`;
+    const serialNo = `MCC/${startYear}/${nextId.toString().padStart(4, '0')}`;
     res.json({ success: true, serialNo });
   } catch (err) {
     res.status(500).json({ success: false });
@@ -430,9 +444,14 @@ app.post('/api/forms', requireAuth, (req, res) => {
 });
 
 app.put('/api/forms/:id', requireAuth, (req, res) => {
-  const { name, description, subtitle } = req.body;
-  db.prepare('UPDATE forms SET name=?, description=?, subtitle=? WHERE id=?').run(name, description, subtitle || '', req.params.id);
-  res.json({ success: true });
+  try {
+    const { name, description, subtitle } = req.body;
+    db.prepare('UPDATE forms SET name=?, description=?, subtitle=? WHERE id=?').run(name, description, subtitle || '', req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error saving form:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 app.delete('/api/forms/:id', requireAuth, (req, res) => {
@@ -441,9 +460,16 @@ app.delete('/api/forms/:id', requireAuth, (req, res) => {
 });
 
 app.get('/api/form-fields', (req, res) => {
-  const { formId } = req.query;
+  const { formId, admin } = req.query;
   if (!formId) return res.status(400).json({ error: 'formId is required' });
-  const fields = db.prepare('SELECT * FROM form_fields WHERE form_id = ? AND is_active = 1 ORDER BY step ASC, sort_order ASC').all(formId);
+  
+  let query = 'SELECT * FROM form_fields WHERE form_id = ?';
+  if (admin !== 'true') {
+    query += ' AND is_active = 1';
+  }
+  query += ' ORDER BY step ASC, sort_order ASC';
+  
+  const fields = db.prepare(query).all(formId);
   res.json(fields);
 });
 
@@ -474,14 +500,25 @@ app.post('/api/form-fields', requireAuth, (req, res) => {
 // Update field
 app.put('/api/form-fields/:id', requireAuth, (req, res) => {
   try {
-    const { step, field_type, label, placeholder, required, options, sort_order, column_width, form_id } = req.body;
+    const { step, field_type, label, placeholder, required, options, sort_order, column_width, form_id, is_active } = req.body;
     db.prepare(
-      'UPDATE form_fields SET step=?, field_type=?, label=?, placeholder=?, required=?, options=?, sort_order=?, column_width=?, form_id=? WHERE id=?'
-    ).run(step, field_type, label, placeholder || '', required ? 1 : 0, options || null, sort_order, column_width || 6, form_id, req.params.id);
+      'UPDATE form_fields SET step=?, field_type=?, label=?, placeholder=?, required=?, options=?, sort_order=?, column_width=?, form_id=?, is_active=? WHERE id=?'
+    ).run(step, field_type, label, placeholder || '', required ? 1 : 0, options || null, sort_order, column_width || 6, form_id, is_active === undefined ? 1 : is_active, req.params.id);
     res.json({ success: true });
   } catch (e) {
     console.error(e);
     res.status(400).json({ success: false, message: e.message });
+  }
+});
+
+// Toggle field active status
+app.patch('/api/form-fields/:id/toggle', requireAuth, (req, res) => {
+  try {
+    const { is_active } = req.body;
+    db.prepare('UPDATE form_fields SET is_active = ? WHERE id = ?').run(is_active, req.params.id);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
   }
 });
 
