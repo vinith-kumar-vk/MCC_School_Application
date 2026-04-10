@@ -737,6 +737,21 @@ app.get('/api/transliterate', (req, res) => {
   }).on('error', () => res.json({ result: text }));
 });
 
+app.delete('/api/applications/:id', requirePermission('applications:delete'), (req, res) => {
+  try {
+    // Also delete the photo if it exists
+    const app = db.prepare('SELECT photograph_path FROM applications WHERE id = ?').get(req.params.id);
+    if (app && app.photograph_path) {
+      const fullPath = path.join(__dirname, 'public', app.photograph_path);
+      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+    }
+    db.prepare('DELETE FROM applications WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 MCC School System Successfully Running on port: ${PORT}`);
 });

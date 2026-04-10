@@ -436,7 +436,14 @@ async function loadAllUsers(offset = 0) {
                 <td><span style="font-weight:500; color:#475569;">${esc(displayClass)}</span></td>
                 <td><span class="badge badge-staff">${esc(app.form_name)}</span></td>
                 <td><span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">${esc(app.status)}</span></td>
-                <td><button class="action-btn" onclick="viewDetail(${app.id})"><i class="fa-solid fa-eye"></i> View</button></td>
+                <td>
+                  <div style="display:flex; gap:8px;">
+                    <button class="action-btn" onclick="viewDetail(${app.id})"><i class="fa-solid fa-eye"></i> View</button>
+                    ${hasPerm('applications:delete') ? `
+                      <button class="action-btn" onclick="deleteApplication(${app.id})" style="color:#ef4444; border-color:#fee2e2;"><i class="fa-solid fa-trash"></i> Delete</button>
+                    ` : ''}
+                  </div>
+                </td>
             </tr>
         `;
     }).join('');
@@ -1200,5 +1207,19 @@ function getBase64ImageFromUrl(url) {
     img.onerror = () => resolve(null);
     img.src = url + "?t=" + new Date().getTime(); // Prevent caching issues
   });
+}
+
+async function deleteApplication(id) {
+  if (!confirm('Are you sure you want to delete this admission entry permanently?')) return;
+  try {
+    const res = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Application deleted successfully');
+      loadAllUsers();
+    } else {
+      showToast('Error: ' + data.message);
+    }
+  } catch (e) { showToast('Network error'); }
 }
 
