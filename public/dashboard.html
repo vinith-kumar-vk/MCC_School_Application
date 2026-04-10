@@ -84,6 +84,28 @@
         </svg>
         <span>Manage Forms</span>
       </a>
+
+      <div class="sb-divider" id="divider-platform"></div>
+      <div class="sb-title" id="title-platform" onclick="showPage('users')">
+        <span>Platform Administration</span>
+        <small>Control Center</small>
+      </div>
+
+      <a href="#" class="sb-nav-item" onclick="showPage('users')" id="nav-users">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 00-3-3.87" />
+          <path d="M16 3.13a4 4 0 010 7.75" />
+        </svg>
+        <span>Users</span>
+      </a>
+      <a href="#" class="sb-nav-item" onclick="showPage('roles')" id="nav-roles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+        <span>Roles & Permissions</span>
+      </a>
     </nav>
 
     <div class="sb-footer">
@@ -91,7 +113,7 @@
         <div class="sb-user-avatar" id="sbAvatar">M</div>
         <div class="sb-user-info">
           <div class="sb-user-name" id="sbUsername">mccadmin</div>
-          <div class="sb-user-role">Administrator</div>
+          <div class="sb-user-role" id="sbUserRole">Administrator</div>
         </div>
       </div>
       <button class="sb-logout-btn" onclick="handleLogout()">
@@ -415,6 +437,68 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- ── PAGE: USERS ── -->
+    <div class="page" id="page-users">
+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h1 class="page-title">Users</h1>
+          <p class="page-subtitle">View and update your system users</p>
+        </div>
+        <button class="btn btn-export" onclick="openUserModal()" style="background:#78091E; color:white;"><i class="fa-solid fa-plus"></i> Create New User</button>
+      </div>
+      <div class="table-card" style="margin-top: 20px;">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>USERNAME</th>
+                <th>NAME</th>
+                <th>PHONE</th>
+                <th>ROLE</th>
+                <th>CREATED AT</th>
+                <th>STATUS</th>
+                <th>IS SUPER?</th>
+                <th style="text-align:right;">OPERATIONS</th>
+              </tr>
+            </thead>
+            <tbody id="usersTbody">
+              <!-- Users injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ROLES ── -->
+    <div class="page" id="page-roles">
+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h1 class="page-title">Roles And Permissions</h1>
+          <p class="page-subtitle">View and update your roles and permissions</p>
+        </div>
+        <button class="btn btn-export" onclick="openRoleModal()" style="background:#78091E; color:white;"><i class="fa-solid fa-plus"></i> Create New Role</button>
+      </div>
+      <div class="table-card" style="margin-top: 20px;">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:60px;">ID</th>
+                <th>NAME</th>
+                <th>DESCRIPTION</th>
+                <th>CREATED AT</th>
+                <th style="text-align:right;">OPERATIONS</th>
+              </tr>
+            </thead>
+            <tbody id="rolesTbody">
+              <!-- Roles injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
   </main>
 
@@ -502,6 +586,72 @@
       </div>
       <div id="modalBody" style="padding: 30px; max-height: 85vh; overflow-y: auto; background: #fff;">
         <!-- Content injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- User Modal (Simplified) -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header">
+        <h2 id="userModalTitle">User Creation</h2>
+        <button class="close-btn" onclick="closeUserModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:30px;">
+        <input type="hidden" id="user_id">
+        <div class="cms-field">
+          <label>Username (Mail ID) *</label>
+          <input type="email" id="user_username" class="cms-input" placeholder="admin@gmail.com">
+        </div>
+        <div class="cms-field">
+          <label>Password * <span id="pwd_hint" style="font-size:10px; color:#64748b; display:none;">(Leave blank to keep current)</span></label>
+          <input type="password" id="user_password" class="cms-input" placeholder="********">
+        </div>
+        <div class="cms-field">
+          <label>Role</label>
+          <select id="user_role" class="cms-input">
+            <!-- Roles injected here -->
+          </select>
+        </div>
+        
+        <!-- Hidden but kept for logic compatibility -->
+        <input type="hidden" id="user_first_name" value="Admin">
+        <input type="hidden" id="user_last_name" value="User">
+        <input type="hidden" id="user_status" value="Activated">
+        <input type="hidden" id="user_phone" value="">
+        <input type="checkbox" id="user_is_super" style="display:none;">
+
+        <button class="cms-save-btn" onclick="saveUser()" style="margin-top:20px; background:#78091E; color:white;"><i class="fa-solid fa-floppy-disk"></i> Create / Save User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Modal -->
+  <div class="modal-overlay" id="roleModal">
+    <div class="modal" style="max-width:800px;">
+      <div class="modal-header">
+        <h2 id="roleModalTitle">Create/Edit Role</h2>
+        <button class="close-btn" onclick="closeRoleModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="role_id">
+        <div class="cms-field">
+          <label>Role Name *</label>
+          <input type="text" id="role_name" class="cms-input" placeholder="Admin users role">
+        </div>
+        <div class="cms-field">
+          <label>Description</label>
+          <input type="text" id="role_description" class="cms-input" placeholder="Short description">
+        </div>
+        
+        <div style="margin-top:20px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:#1e293b; margin-bottom:12px; text-transform:uppercase;">Permission Flags</label>
+          <div id="permissionsGrid">
+            <!-- Permissions injected by JS -->
+          </div>
+        </div>
+
+        <button class="cms-save-btn" onclick="saveRole()" style="margin-top:20px;"><i class="fa-solid fa-floppy-disk"></i> Save Role</button>
       </div>
     </div>
   </div>

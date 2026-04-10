@@ -1031,3 +1031,141 @@ h4,
   background: #f1f5f9;
   color: #94a3b8;
 }
+
+/* Role Permissions Spacing */
+#permissionsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px 0;
+}
+
+.permission-group {
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.permission-group:hover {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-color: #cbd5e1;
+}
+
+.permission-group label.group-title {
+  color: #78091E;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.permission-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding-left: 5px;
+}
+
+.perm-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.perm-check:hover {
+  color: #1e293b;
+}
+
+.perm-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #78091E;
+}
+
+.perm-check span {
+  letter-spacing: 0.3px;
+}
+
+/* Base Spacing for CMS Elements */
+.cms-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.cms-field {
+  margin-bottom: 20px;
+}
+
+.cms-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.cms-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.cms-input:focus {
+  outline: none;
+  border-color: #78091E;
+  box-shadow: 0 0 0 3px rgba(120, 9, 30, 0.1);
+}
+
+.cms-save-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.modal-body {
+  padding: 32px !important;
+  gap: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 24px 32px !important;
+}
+
+.action-btn {
+  padding: 8px 16px !important;
+}
+
+.data-table th, .data-table td {
+  padding: 16px 20px !important;
+}

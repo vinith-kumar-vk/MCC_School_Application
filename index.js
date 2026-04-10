@@ -27,12 +27,28 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 const db = new Database(path.join(__dirname, 'new_concept.db'));
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS roles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    permissions TEXT, -- JSON string of permission keys
+    is_default INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS admins (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     name TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    first_name TEXT,
+    last_name TEXT,
+    phone TEXT,
+    status TEXT DEFAULT 'Activated',
+    role_id INTEGER,
+    is_super INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
   );
 
   CREATE TABLE IF NOT EXISTS forms (
@@ -259,6 +275,15 @@ const requireAuth = (req, res, next) => {
   res.status(401).json({ success: false, message: 'Unauthorized' });
 };
 
+const requirePermission = (permission) => {
+  return (req, res, next) => {
+    if (!req.session || !req.session.adminId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+    if (req.session.isSuper) return next();
+    if (req.session.permissions && req.session.permissions.includes(permission)) return next();
+    res.status(403).json({ success: false, message: 'Forbidden: Missing permission ' + permission });
+  };
+};
+
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 
 app.post('/api/apply', upload.single('photograph'), (req, res) => {
@@ -337,13 +362,36 @@ app.post('/api/upload-logo', requireAuth, (req, res, next) => {
 // Other APIs remain same
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  const admin = db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
+  const admin = db.prepare(`
+    SELECT a.*, r.name as role_name, r.permissions 
+    FROM admins a 
+    LEFT JOIN roles r ON a.role_id = r.id 
+    WHERE a.username = ?
+  `).get(username);
+
   if (!admin || !bcrypt.compareSync(password, admin.password)) {
     return res.json({ success: false, message: 'Invalid credentials' });
   }
+
+  if (admin.status !== 'Activated') {
+    return res.json({ success: false, message: 'Account is deactivated' });
+  }
+
   req.session.adminId = admin.id;
   req.session.adminName = admin.name;
-  res.json({ success: true, name: admin.name });
+  req.session.adminUsername = admin.username;
+  req.session.isSuper = (admin.is_super === 1 || admin.username === 'mccmrfadmin');
+  req.session.roleName = req.session.isSuper ? 'Super Admin' : (admin.role_name || 'Admin');
+  // Wildcard for Super Admin
+  req.session.permissions = req.session.isSuper ? ['*'] : (admin.permissions ? JSON.parse(admin.permissions) : []);
+  
+  res.json({ 
+    success: true, 
+    name: admin.name, 
+    isSuper: !!admin.is_super,
+    roleName: req.session.roleName,
+    permissions: req.session.permissions 
+  });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -352,11 +400,28 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.get('/api/auth-check', (req, res) => {
-  if (req.session && req.session.adminId) {
-    res.json({ authenticated: true, name: req.session.adminName });
-  } else {
-    res.json({ authenticated: false });
-  }
+  if (!req.session || !req.session.adminId) return res.json({ authenticated: false });
+  
+  // Re-verify from DB for reliable permission state
+  const admin = db.prepare(`
+    SELECT a.*, r.name as role_name, r.permissions 
+    FROM admins a 
+    LEFT JOIN roles r ON a.role_id = r.id 
+    WHERE a.id = ?
+  `).get(req.session.adminId);
+
+  if (!admin) return res.json({ authenticated: false });
+
+  const isSuper = (admin.is_super === 1 || admin.username === 'mccmrfadmin');
+  
+  res.json({ 
+    authenticated: true, 
+    name: admin.name,
+    username: admin.username,
+    isSuper: isSuper,
+    roleName: isSuper ? 'Super Admin' : (admin.role_name || 'Administrator'),
+    permissions: isSuper ? ['*'] : (admin.permissions ? JSON.parse(admin.permissions) : [])
+  });
 });
 
 app.get('/api/stats', requireAuth, (req, res) => {
@@ -561,8 +626,94 @@ app.put('/api/settings', requireAuth, (req, res) => {
   }
 });
 
+// ── USER MANAGEMENT ──────────────────────────────────────────────────────────
+
+app.get('/api/users', requirePermission('users:view'), (req, res) => {
+  const users = db.prepare(`
+    SELECT a.id, a.username, a.name, a.first_name, a.last_name, a.phone, a.status, a.is_super, r.name as role_name, a.role_id, a.created_at
+    FROM admins a
+    LEFT JOIN roles r ON a.role_id = r.id
+    ORDER BY a.id DESC
+  `).all();
+  res.json(users);
+});
+
+app.post('/api/users', requirePermission('users:edit'), (req, res) => {
+  const { username, password, name, first_name, last_name, phone, role_id, is_super } = req.body;
+  const hashed = bcrypt.hashSync(password, 10);
+  try {
+    const result = db.prepare(`
+      INSERT INTO admins (username, password, name, first_name, last_name, phone, role_id, is_super)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(username, hashed, name, first_name, last_name, phone, role_id || null, is_super ? 1 : 0);
+    res.json({ success: true, id: result.lastInsertRowid });
+  } catch (e) {
+    res.status(400).json({ success: false, message: e.message });
+  }
+});
+
+app.put('/api/users/:id', requirePermission('users:edit'), (req, res) => {
+  const { name, first_name, last_name, phone, role_id, is_super, status, password } = req.body;
+  try {
+    if (password) {
+      const hashed = bcrypt.hashSync(password, 10);
+      db.prepare(`
+        UPDATE admins SET name=?, first_name=?, last_name=?, phone=?, role_id=?, is_super=?, status=?, password=?
+        WHERE id=?
+      `).run(name, first_name, last_name, phone, role_id || null, is_super ? 1 : 0, status, hashed, req.params.id);
+    } else {
+      db.prepare(`
+        UPDATE admins SET name=?, first_name=?, last_name=?, phone=?, role_id=?, is_super=?, status=?
+        WHERE id=?
+      `).run(name, first_name, last_name, phone, role_id || null, is_super ? 1 : 0, status, req.params.id);
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ success: false, message: e.message });
+  }
+});
+
+app.delete('/api/users/:id', requirePermission('users:delete'), (req, res) => {
+  db.prepare('DELETE FROM admins WHERE id = ? AND is_super = 0').run(req.params.id);
+  res.json({ success: true });
+});
+
+// ── ROLE MANAGEMENT ──────────────────────────────────────────────────────────
+
+app.get('/api/roles', requirePermission('roles:view'), (req, res) => {
+  const roles = db.prepare('SELECT * FROM roles ORDER BY id ASC').all();
+  const processed = roles.map(r => ({ ...r, permissions: JSON.parse(r.permissions || '[]') }));
+  res.json(processed);
+});
+
+app.post('/api/roles', requirePermission('roles:edit'), (req, res) => {
+  const { name, description, permissions } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO roles (name, description, permissions) VALUES (?, ?, ?)')
+      .run(name, description, JSON.stringify(permissions || []));
+    res.json({ success: true, id: result.lastInsertRowid });
+  } catch (e) {
+    res.status(400).json({ success: false, message: e.message });
+  }
+});
+
+app.put('/api/roles/:id', requirePermission('roles:edit'), (req, res) => {
+  const { name, description, permissions } = req.body;
+  try {
+    db.prepare('UPDATE roles SET name=?, description=?, permissions=? WHERE id=?')
+      .run(name, description, JSON.stringify(permissions || []), req.params.id);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ success: false, message: e.message });
+  }
+});
+
+app.delete('/api/roles/:id', requirePermission('roles:delete'), (req, res) => {
+  db.prepare('DELETE FROM roles WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
 // ── TAMIL TRANSLITERATION PROXY ────────────────────────────────────────────────
-// Proxies to Google Input Tools to avoid CORS from browser
 app.get('/api/transliterate', (req, res) => {
   const { text } = req.query;
   if (!text || !text.trim()) return res.json({ result: '' });
@@ -576,7 +727,6 @@ app.get('/api/transliterate', (req, res) => {
     apiRes.on('end', () => {
       try {
         const parsed = JSON.parse(data);
-        // Response: ["SUCCESS", [["word", ["தமிழ்"], ...]]]
         if (parsed[0] === 'SUCCESS' && parsed[1]?.[0]?.[1]?.[0]) {
           res.json({ result: parsed[1][0][1][0] });
         } else {

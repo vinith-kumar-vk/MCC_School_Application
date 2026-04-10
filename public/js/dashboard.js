@@ -111,31 +111,88 @@ async function loadRecentUsers() {
 }
 
 function showPage(pageId) {
+  console.log('Switching to page:', pageId);
   const sidebar = id('sidebar');
   const overlay = id('sidebarOverlay');
   if (sidebar && window.innerWidth <= 768) {
     sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('active');
   }
+  
+  const targetPage = id('page-' + pageId);
+  const targetNav = id('nav-' + pageId);
+  
+  if (!targetPage) {
+    console.error('Page element not found: page-' + pageId);
+    return;
+  }
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  id('page-' + pageId).classList.add('active');
+  targetPage.classList.add('active');
+  
   document.querySelectorAll('.sb-nav-item').forEach(n => n.classList.remove('active'));
-  id('nav-' + pageId).classList.add('active');
+  if (targetNav) targetNav.classList.add('active');
 
   if (pageId === 'applications') loadAllUsers();
   else if (pageId === 'dashboard') { loadStats(); loadRecentUsers(); }
   else if (pageId === 'site-settings') loadSiteSettings();
   else if (pageId === 'form-builder') loadFormFields();
+  else if (pageId === 'users') loadUsers();
+  else if (pageId === 'roles') loadRoles();
 }
+
+let currentUser = null;
 
 async function checkAuth() {
   try {
     const res = await fetch('/api/auth-check');
     const data = await res.json();
     if (!data.authenticated) { window.location.href = '/login.html'; return; }
-    id('sbUsername').textContent = data.name || 'mccadmin';
-    id('sbAvatar').textContent = (data.name || 'M')[0].toUpperCase();
+    currentUser = data;
+    
+    // Hard force for root/admin
+    const isSuper = (data.isSuper == true || data.isSuper == 1 || data.username === 'mccmrfadmin');
+    const roleName = (data.roleName || 'Administrator').toLowerCase();
+    const isPowerAdmin = isSuper || roleName === 'super admin' || roleName === 'root';
+    
+    id('sbUsername').textContent = data.name || 'MCC Admin';
+    id('sbAvatar').innerHTML = isSuper ? '<i class="fa-solid fa-crown" style="color:#f59e0b;"></i>' : (data.name || 'M')[0].toUpperCase();
+    const roleEl = id('sbUserRole');
+    roleEl.textContent = isSuper ? 'Super Admin (Root)' : (data.roleName || 'Administrator');
+    
+    if (isSuper || roleName.includes('super')) {
+        roleEl.style.color = '#f59e0b';
+        roleEl.style.fontWeight = '800';
+    }
+    
+    // Permission based sidebar item visibility
+    const navItems = {
+      'nav-site-settings': 'settings:view',
+      'nav-form-builder': 'forms:view',
+      'nav-users': 'users:view',
+      'nav-roles': 'roles:view'
+    };
+    
+    let hasAdminAccess = false;
+    Object.entries(navItems).forEach(([navId, perm]) => {
+      const el = id(navId);
+      if (el) {
+        const canSee = isSuper || isPowerAdmin || (data.permissions && (data.permissions.includes('*') || data.permissions.includes(perm)));
+        el.style.display = canSee ? 'flex' : 'none';
+        if (canSee && (navId === 'nav-users' || navId === 'nav-roles')) hasAdminAccess = true;
+      }
+    });
+    
+    // Header/Divider visibility
+    if (id('divider-platform')) id('divider-platform').style.display = hasAdminAccess ? 'block' : 'none';
+    if (id('title-platform')) id('title-platform').style.display = hasAdminAccess ? 'block' : 'none';
+
   } catch (e) { window.location.href = '/login.html'; }
+}
+
+function hasPerm(perm) {
+  if (!currentUser) return false;
+  return currentUser.isSuper || (currentUser.permissions && currentUser.permissions.includes(perm));
 }
 
 async function loadSiteSettings() {
@@ -145,6 +202,22 @@ async function loadSiteSettings() {
     const fields = ['site_title', 'site_subtitle', 'site_location', 'site_contact', 'landing_title', 'form_title', 'form_subtitle', 'footer_text', 'btn1_label', 'btn2_label', 'form1_title', 'form2_title', 'admission_year'];
     fields.forEach(f => { if (id('set_' + f)) id('set_' + f).value = s[f] || ''; });
     if (id('logoPreview') && s.logo_path) id('logoPreview').src = s.logo_path + '?t=' + Date.now();
+    
+    // Permission checks for settings
+    const saveBtns = document.querySelectorAll('.cms-save-btn');
+    saveBtns.forEach(btn => {
+      // Branding and CMS save buttons
+      if (btn.onclick && (btn.onclick.toString().includes('saveBrandSettings') || 
+                          btn.onclick.toString().includes('saveLandingPageSettings') || 
+                          btn.onclick.toString().includes('saveFormGlobalSettings') ||
+                          btn.onclick.toString().includes('uploadLogo'))) {
+        btn.style.display = hasPerm('settings:edit') ? 'block' : 'none';
+      }
+    });
+    
+    const uploadLabel = document.querySelector('.cms-upload-btn');
+    if (uploadLabel) uploadLabel.style.display = hasPerm('settings:edit') ? 'inline-block' : 'none';
+
   } catch (e) { console.error('Settings load error', e); }
 }
 
@@ -261,6 +334,14 @@ function filterStep(step) {
   document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
   id('tab-' + step).classList.add('active');
   const filtered = step === 0 ? allFields : allFields.filter(f => f.step === step);
+  
+  // Permission checks for top buttons
+  const addBtn = document.querySelector('button[onclick="openFieldModal(null)"]');
+  if (addBtn) addBtn.style.display = hasPerm('forms:edit') ? 'flex' : 'none';
+  
+  const editPropBtn = document.querySelector('button[onclick="openFormSettingsModal()"]');
+  if (editPropBtn) editPropBtn.style.display = hasPerm('forms:edit') ? 'flex' : 'none';
+
   renderFieldsTable(filtered);
 }
 
@@ -288,15 +369,17 @@ function renderFieldsTable(fields) {
         <i class="fa-solid fa-star" style="font-size: 14px; color: ${f.required ? '#ef4444' : '#e2e8f0'};"></i>
       </td>
       <td style="text-align:center;">
-        <label class="switch">
+        <label class="switch" style="${hasPerm('forms:edit') ? '' : 'pointer-events:none; opacity:0.5;'}">
           <input type="checkbox" ${f.is_active ? 'checked' : ''} onchange="toggleFieldStatus(${f.id}, this.checked)">
           <span class="slider"></span>
         </label>
       </td>
       <td style="text-align:right; padding-right: 20px;">
         <div style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button class="action-btn-edit" onclick="openFieldModal(${f.id})" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; background: #f1f5f9; color: #1e293b; transition: all 0.2s;"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="action-btn-del" onclick="deleteField(${f.id})" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; background: #fff1f2; color: #be123c; transition: all 0.2s;"><i class="fa-solid fa-trash-can"></i></button>
+          ${hasPerm('forms:edit') ? `
+            <button class="action-btn-edit" onclick="openFieldModal(${f.id})" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; background: #f1f5f9; color: #1e293b; transition: all 0.2s;"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button class="action-btn-del" onclick="deleteField(${f.id})" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; background: #fff1f2; color: #be123c; transition: all 0.2s;"><i class="fa-solid fa-trash-can"></i></button>
+          ` : '<span style="color:#cbd5e1; font-size:12px;">View Only</span>'}
         </div>
       </td>
     </tr>
@@ -406,7 +489,7 @@ function viewDetail(id) {
                   <div id="serialEditContainer" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:4px 12px; border-radius:100px; border:1px solid #e2e8f0;">
                     <span style="font-size:11px; font-weight:700; color:#475569;">ADMISSION NO:</span>
                     <span id="serialText" style="font-weight:700; color:#1e293b; font-size:13px;">${esc(app.serial_no || 'N/A')}</span>
-                    <button onclick="enableSerialEdit(${app.id}, '${esc(app.serial_no || '')}')" style="background:none; border:none; color:maroon; cursor:pointer; font-size:12px; padding:0 4px;"><i class="fa-solid fa-pen"></i></button>
+                    ${hasPerm('applications:edit') ? `<button onclick="enableSerialEdit(${app.id}, '${esc(app.serial_no || '')}')" style="background:none; border:none; color:maroon; cursor:pointer; font-size:12px; padding:0 4px;"><i class="fa-solid fa-pen"></i></button>` : ''}
                   </div>
                </div>
             </div>
@@ -432,8 +515,10 @@ function viewDetail(id) {
           <button class="btn" style="background:#78091E; color:white; padding:10px 24px; border-radius:8px; border:none; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;" onclick="printApplicationPDF()">
              <i class="fa-solid fa-file-pdf"></i> PRINT PDF
           </button>
-          <button class="btn" style="background:#00ba7c; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Approved')">APPROVE</button>
-          <button class="btn" style="background:#ef4444; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Rejected')">REJECT</button>
+          ${hasPerm('applications:edit') ? `
+            <button class="btn" style="background:#00ba7c; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Approved')">APPROVE</button>
+            <button class="btn" style="background:#ef4444; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Rejected')">REJECT</button>
+          ` : ''}
         </div>
       </div>
     `;
@@ -812,13 +897,280 @@ async function createNewForm() {
   } catch (e) { showToast('Error creating form'); }
 }
 
-// HELPERS FOR PDF
-function esc(str) {
-  if (!str) return '';
-  return String(str).replace(/[&<>"']/g, function (m) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-  });
+// ── USER MANAGEMENT ──────────────────────────────────────────────────────────
+
+async function loadUsers() {
+  const tbody = id('usersTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Loading users...</td></tr>';
+  try {
+    const res = await fetch('/api/users');
+    const users = await res.json();
+    
+    if (!Array.isArray(users)) {
+       tbody.innerHTML = `<tr><td colspan="8" class="table-empty">Error: ${users.message || 'Access Denied'}</td></tr>`;
+       return;
+    }
+    
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="table-empty">No users found.</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td style="font-weight:600;">${esc(u.username)}</td>
+        <td>${esc(u.name)}</td>
+        <td>${esc(u.phone || '—')}</td>
+        <td><span class="role-badge">${esc(u.role_name || (u.is_super ? 'Super Admin' : 'None'))}</span></td>
+        <td style="color:#64748b; font-size:12px;">${new Date(u.created_at).toLocaleDateString()}</td>
+        <td><span class="status-badge ${u.status === 'Activated' ? 'status-activated' : 'status-deactivated'}">${u.status}</span></td>
+        <td style="text-align:center;">${u.is_super ? '<i class="fa-solid fa-crown" style="color:#f59e0b;"></i>' : '—'}</td>
+        <td style="text-align:right;">
+          <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <button class="action-btn" onclick="openUserModal(${u.id})"><i class="fa-solid fa-pen"></i></button>
+            ${!u.is_super ? `<button class="action-btn" onclick="deleteUser(${u.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Error loading users.</td></tr>';
+  }
 }
+
+async function openUserModal(userId = null) {
+  const modal = id('userModal');
+  if (id('user_id')) id('user_id').value = userId || '';
+  if (id('userModalTitle')) id('userModalTitle').textContent = userId ? 'Edit User' : 'Create New User';
+  
+  const phint = id('pwd_hint');
+  if (phint) phint.style.display = userId ? 'inline' : 'none';
+  
+  // Reset fields
+  ['user_first_name', 'user_last_name', 'user_username', 'user_phone', 'user_password', 'user_status', 'user_role'].forEach(fid => {
+    const el = id(fid);
+    if (el) el.value = (fid === 'user_status' ? 'Activated' : '');
+  });
+  if (id('user_is_super')) id('user_is_super').checked = false;
+
+  // Load roles for select
+  try {
+    const res = await fetch('/api/roles');
+    const roles = await res.json();
+    id('user_role').innerHTML = '<option value="">Select Role</option>' + 
+      roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+  } catch (e) {}
+
+  if (userId) {
+    const res = await fetch('/api/users');
+    const users = await res.json();
+    const user = users.find(u => u.id == userId);
+    if (user) {
+      id('user_first_name').value = user.first_name || '';
+      id('user_last_name').value = user.last_name || '';
+      id('user_username').value = user.username || '';
+      id('user_phone').value = user.phone || '';
+      id('user_status').value = user.status || 'Activated';
+      id('user_role').value = user.role_id || '';
+      id('user_is_super').checked = !!user.is_super;
+    }
+  }
+  modal.classList.add('active');
+}
+
+function closeUserModal() { id('userModal').classList.remove('active'); }
+
+async function saveUser() {
+  const userId = id('user_id').value;
+  const body = {
+    first_name: id('user_first_name') ? id('user_first_name').value : 'Admin',
+    last_name: id('user_last_name') ? id('user_last_name').value : 'User',
+    username: id('user_username').value,
+    phone: id('user_phone') ? id('user_phone').value : '',
+    status: id('user_status') ? id('user_status').value : 'Activated',
+    role_id: id('user_role').value || null,
+    is_super: id('user_is_super') && id('user_is_super').checked ? 1 : 0,
+    name: (id('user_username').value.split('@')[0]) || 'Admin'
+  };
+  
+  const password = id('user_password').value;
+  if (password) body.password = password;
+  
+  if (!body.username || (!userId && !password)) {
+    showToast('Username and Password are required for new users');
+    return;
+  }
+
+  try {
+    const url = userId ? `/api/users/${userId}` : '/api/users';
+    const res = await fetch(url, {
+      method: userId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('User saved successfully');
+      closeUserModal();
+      loadUsers();
+    } else {
+      showToast('Error: ' + data.message);
+    }
+  } catch (e) { showToast('Network Error'); }
+}
+
+async function deleteUser(userId) {
+  if (!confirm('Are you sure you want to delete this user?')) return;
+  try {
+    const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+    if (res.ok) { showToast('User deleted'); loadUsers(); }
+  } catch (e) { showToast('Error deleting user'); }
+}
+
+// ── ROLE MANAGEMENT ──────────────────────────────────────────────────────────
+
+const permissionGroups = {
+  'Dashboard': ['dashboard:view'],
+  'Applications': ['applications:view', 'applications:edit', 'applications:delete'],
+  'Manage Forms': ['forms:view', 'forms:edit', 'forms:delete'],
+  'Branding / Identity': ['settings:view', 'settings:edit'],
+  'User Management': ['users:view', 'users:edit', 'users:delete'],
+  'Roles / Permissions': ['roles:view', 'roles:edit', 'roles:delete']
+};
+
+async function loadRoles() {
+  const tbody = id('rolesTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Loading roles...</td></tr>';
+  try {
+    const res = await fetch('/api/roles');
+    const roles = await res.json();
+
+    if (!Array.isArray(roles)) {
+       tbody.innerHTML = `<tr><td colspan="5" class="table-empty">Error: ${roles.message || 'Access Denied'}</td></tr>`;
+       return;
+    }
+
+    if (!roles.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="table-empty">No roles found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = roles.map(r => `
+      <tr>
+        <td style="font-weight:700; color:#64748b;">#${r.id}</td>
+        <td style="font-weight:600; color:#1e293b;">${esc(r.name)}</td>
+        <td style="color:#64748b;">${esc(r.description || '—')}</td>
+        <td style="color:#64748b; font-size:12px;">${new Date(r.created_at).toLocaleDateString()}</td>
+        <td style="text-align:right;">
+          <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <button class="action-btn" onclick="openRoleModal(${r.id})"><i class="fa-solid fa-shield-halved"></i> Permissions</button>
+            <button class="action-btn" onclick="deleteRole(${r.id})" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Error loading roles.</td></tr>';
+  }
+}
+
+function renderPermissionsGrid(activePerms = []) {
+  const grid = id('permissionsGrid');
+  if (!grid) return;
+  
+  const groupIcons = {
+    'Dashboard': 'fa-chart-pie',
+    'Applications': 'fa-users-rectangle',
+    'Manage Forms': 'fa-file-lines',
+    'Branding / Identity': 'fa-palette',
+    'User Management': 'fa-user-gear',
+    'Roles / Permissions': 'fa-shield-halved'
+  };
+
+  let html = '';
+  Object.entries(permissionGroups).forEach(([groupName, perms]) => {
+    const iconClass = groupIcons[groupName] || 'fa-folder';
+    html += `
+      <div class="permission-group">
+        <label class="group-title">
+          <i class="fa-solid ${iconClass}"></i> ${groupName}
+        </label>
+        <div class="permission-items">
+          ${perms.map(p => `
+            <label class="perm-check">
+              <input type="checkbox" class="perm-checkbox" name="permissions" value="${p}" ${activePerms.includes(p) ? 'checked' : ''}> 
+              <span>${p.split(':')[1].toUpperCase()}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+  grid.innerHTML = html;
+}
+
+async function openRoleModal(roleId = null) {
+  const modal = id('roleModal');
+  id('role_id').value = roleId || '';
+  id('roleModalTitle').textContent = roleId ? 'Edit Role Permissions' : 'Create New Role';
+  id('role_name').value = '';
+  id('role_description').value = '';
+  
+  let activePerms = [];
+  if (roleId) {
+    const res = await fetch('/api/roles');
+    const roles = await res.json();
+    const role = roles.find(r => r.id == roleId);
+    if (role) {
+      id('role_name').value = role.name;
+      id('role_description').value = role.description || '';
+      activePerms = role.permissions || [];
+    }
+  }
+  
+  renderPermissionsGrid(activePerms);
+  modal.classList.add('active');
+}
+
+function closeRoleModal() { id('roleModal').classList.remove('active'); }
+
+async function saveRole() {
+  const roleId = id('role_id').value;
+  const name = id('role_name').value;
+  const description = id('role_description').value;
+  
+  const permissionChecks = document.querySelectorAll('.perm-checkbox:checked');
+  const permissions = Array.from(permissionChecks).map(c => c.value);
+  
+  if (!name) { showToast('Role name is required'); return; }
+
+  const body = { name, description, permissions };
+  
+  try {
+    const url = roleId ? `/api/roles/${roleId}` : '/api/roles';
+    const res = await fetch(url, {
+      method: roleId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      showToast('Role saved successfully');
+      closeRoleModal();
+      loadRoles();
+    }
+  } catch (e) { showToast('Network Error'); }
+}
+
+async function deleteRole(roleId) {
+  if (!confirm('Are you sure you want to delete this role?')) return;
+  try {
+    const res = await fetch(`/api/roles/${roleId}`, { method: 'DELETE' });
+    if (res.ok) { showToast('Role deleted'); loadRoles(); }
+  } catch (e) { showToast('Error deleting role'); }
+}
+
+
 
 function getBase64ImageFromUrl(url) {
   return new Promise((resolve) => {
