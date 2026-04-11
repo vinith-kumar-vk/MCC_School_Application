@@ -435,7 +435,6 @@ async function loadAllUsers(offset = 0) {
                 <td style="font-weight: 600; color: #1e293b;">${esc(d.pupil_name || 'N/A')}</td>
                 <td><span style="font-weight:500; color:#475569;">${esc(displayClass)}</span></td>
                 <td><span class="badge badge-staff">${esc(app.form_name)}</span></td>
-                <td><span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">${esc(app.status)}</span></td>
                 <td>
                   <div style="display:flex; gap:8px;">
                     <button class="action-btn" onclick="viewDetail(${app.id})"><i class="fa-solid fa-eye"></i> View</button>
@@ -490,9 +489,10 @@ function viewDetail(id) {
           <div style="flex:1;">
             <div>
               <h1 style="margin:0; font-size:32px; font-weight:800; color:#1e293b; letter-spacing:-0.5px;">${esc(d.pupil_name || 'N/A')}</h1>
-              <p style="margin:4px 0 12px; color:#64748b; font-size:16px;"><i class="fa-solid fa-file-alt"></i> Form: <span style="color:maroon; font-weight:bold;">${esc(app.form_name)}</span></p>
-               <div style="display:flex; gap:12px; align-items:center;">
-                  <span class="badge ${app.status === 'Approved' ? 'badge-active' : 'badge-pending'}">STATUS: ${app.status}</span>
+              <p style="margin:4px 0 12px; color:#64748b; font-size:16px;">
+                <i class="fa-solid fa-file-alt"></i> Form: <span style="color:maroon; font-weight:bold;">${esc(app.form_name)}</span>
+              </p>
+              <div style="display:flex; gap:12px; align-items:center;">
                   <div id="serialEditContainer" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:4px 12px; border-radius:100px; border:1px solid #e2e8f0;">
                     <span style="font-size:11px; font-weight:700; color:#475569;">ADMISSION NO:</span>
                     <span id="serialText" style="font-weight:700; color:#1e293b; font-size:13px;">${esc(app.serial_no || 'N/A')}</span>
@@ -503,7 +503,7 @@ function viewDetail(id) {
           </div>
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1px; background:#f1f5f9; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">`;
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1px; background:#f1f5f9; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">`; 
 
     for (const [label, val] of Object.entries(d)) {
       html += `<div style="background:white; padding:16px 20px;">
@@ -535,10 +535,6 @@ function viewDetail(id) {
           <button class="btn" style="background:#78091E; color:white; padding:10px 24px; border-radius:8px; border:none; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:8px;" onclick="printApplicationPDF()">
              <i class="fa-solid fa-file-pdf"></i> PRINT PDF
           </button>
-          ${hasPerm('applications:edit') ? `
-            <button class="btn" style="background:#00ba7c; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Approved')">APPROVE</button>
-            <button class="btn" style="background:#ef4444; color:white; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;" onclick="updateStatus(${app.id}, 'Rejected')">REJECT</button>
-          ` : ''}
         </div>
       </div>
     `;
