@@ -58,7 +58,13 @@
 
           <!-- Mobile-only: form title shown below logo -->
           <div class="mobile-form-title" id="mobileSidebarTitle">
-            <p class="mobile-form-title-text" id="mobileTitleText">APPLICATION FOR ADMISSION</p>
+            <p class="mobile-form-title-text" id="mobileTitleText" style="margin-bottom:0;">APPLICATION FOR ADMISSION
+            </p>
+            <p id="mobileClassTitle" style="color: rgba(255, 255, 255, 0.92);
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0;
+    text-transform: uppercase;"></p>
           </div>
 
           <nav class="step-navigation">
@@ -107,8 +113,7 @@
           <!-- Left: Title & Subtitle with Maroon Bar -->
           <div class="form-title-group" style="border-left: 4px solid var(--mcc-maroon); padding-left: 16px;">
             <h1 class="h3 fw-bold text-uppercase mb-1" id="formTitle"
-              style="color: #0b1c3c; font-weight: 800 !important; letter-spacing: -0.5px;">APPLICATION FOR ADMISSION
-              (CLASS XI AND XII)</h1>
+              style="color: #0b1c3c; font-weight: 800 !important; letter-spacing: -0.5px;">APPLICATION FOR ADMISSION</h1>
             <p id="formSubtitle" class="mb-1 text-uppercase fw-bold" style="font-size: 0.85rem; color: #8B1A2E;"></p>
             <p class="mb-0 fw-bold" style="font-size: 0.95rem; color: var(--mcc-maroon);">Admission No: <span
                 id="headerSerialDisplay" style="letter-spacing: 0.5px;">Loading...</span></p>
@@ -265,20 +270,8 @@
     }
 
     // Sync form title to mobile sidebar
-    function syncMobileTitle() {
-      const src = document.getElementById('formTitle');
-      const dest = document.getElementById('mobileTitleText');
-      if (src && dest && src.textContent.trim()) {
-        dest.textContent = src.textContent.trim();
-      }
-      // Re-calculate sticky offset after title renders
-      updateStickyOffset();
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
       updateStickyOffset();
-      // Wait briefly for dynamic JS to populate formTitle
-      setTimeout(syncMobileTitle, 600);
     });
     window.addEventListener('resize', updateStickyOffset);
   </script>

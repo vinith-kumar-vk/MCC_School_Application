@@ -52,11 +52,16 @@ async function loadFormInfo() {
     const brandTag = document.querySelector('.sidebar-tagline');
     if (brandTag && s.site_subtitle) brandTag.textContent = s.site_subtitle;
 
-    const ftitle = id('formTitle');
+    const fMobileClass = id('mobileClassTitle');
     const fsubtitle = id('formSubtitle');
-    if (ftitle && currentForm) {
-      ftitle.textContent = currentForm.name || 'APPLICATION FOR ADMISSION';
+
+    let displayClassName = (formId == 1) ? 'Pre-kg to UKG ADMISSION FORM' : 'Class XI Admission Form';
+    if (currentForm && currentForm.name && currentForm.name !== 'APPLICATION FOR ADMISSION') {
+       displayClassName = currentForm.name;
     }
+
+    if (fMobileClass) fMobileClass.textContent = displayClassName;
+    
     if (fsubtitle && currentForm) {
       fsubtitle.textContent = currentForm.subtitle || '';
     }
