@@ -506,9 +506,13 @@ function viewDetail(id) {
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1px; background:#f1f5f9; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">`; 
 
     for (const [label, val] of Object.entries(d)) {
+      let displayVal = esc(val) || '—';
+      if (typeof val === 'string' && val.startsWith('/uploads/')) {
+        displayVal = `<a href="${val}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; background:#f1f5f9; color:maroon; padding:4px 12px; border-radius:6px; text-decoration:none; font-weight:700; font-size:12px; border:1px solid #e2e8f0;"><i class="fa-solid fa-file-arrow-down"></i> VIEW FILE</a>`;
+      }
       html += `<div style="background:white; padding:16px 20px;">
         <span style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px;">${esc(label.replace(/_/g, ' '))}</span>
-        <span style="font-weight:600; font-size:15px; color:#1e293b;">${esc(val) || '—'}</span>
+        <span style="font-weight:600; font-size:15px; color:#1e293b;">${displayVal}</span>
       </div>`;
     }
 
@@ -645,10 +649,16 @@ async function printApplicationPDF() {
   function makeFieldTable(fields) {
     let rows = '';
     fields.forEach(([label, val]) => {
+      let displayVal = esc(val) || '—';
+      // Clean file upload paths: /uploads/1776159101523-10th_Marksheet.pdf → 10th_Marksheet.pdf
+      if (typeof val === 'string' && val.startsWith('/uploads/')) {
+        const fileName = val.split('/').pop().replace(/^\d+-/, '');
+        displayVal = esc(fileName);
+      }
       rows += `
         <tr>
           <td style="padding:6.2px 12px; border:1px solid #78091E; font-size:8pt; font-weight:bold; color:#444; text-transform:uppercase; background:#fdfdfd; width:44%;">${label}</td>
-          <td style="padding:6.2px 12px; border:1px solid #78091E; font-size:9pt; color:#000; width:56%; font-weight:700;">${esc(val) || '—'}</td>
+          <td style="padding:6.2px 12px; border:1px solid #78091E; font-size:9pt; color:#000; width:56%; font-weight:700;">${displayVal}</td>
         </tr>
       `;
     });
@@ -741,7 +751,8 @@ function openFieldModal(fieldId) {
   if (!modal || !formId) { showToast('Please select a form first'); return; }
 
   // Reset form
-  ['fld_id', 'fld_name', 'fld_label', 'fld_options'].forEach(x => { if (id(x)) id(x).value = ''; });
+  ['fld_id', 'fld_name', 'fld_label', 'fld_options', 'fld_max_size'].forEach(x => { if (id(x)) id(x).value = ''; });
+  if (id('fld_size_unit')) id('fld_size_unit').value = 'MB';
   if (id('fld_active')) id('fld_active').value = '1';
   if (id('fld_step')) id('fld_step').value = '1';
   if (id('fld_type')) id('fld_type').value = 'text';
@@ -750,6 +761,7 @@ function openFieldModal(fieldId) {
   id('row_field_name') && (id('row_field_name').style.display = 'block');
   if (id('fld_order')) id('fld_order').value = '99';
   id('row_options') && (id('row_options').style.display = 'none');
+  id('row_file_settings') && (id('row_file_settings').style.display = 'none');
   id('fieldModalTitle').textContent = fieldId ? 'Edit Field' : 'Add New Field';
 
   if (fieldId) {
@@ -759,13 +771,27 @@ function openFieldModal(fieldId) {
       if (id('fld_type')) id('fld_type').value = f.field_type;
       id('fld_name').value = f.field_name;
       id('fld_label').value = f.label;
-      if (id('fld_options')) id('fld_options').value = f.options || '';
+      
+      const type = f.field_type;
+      if (type === 'select') {
+        id('fld_options').value = f.options || '';
+        id('row_options').style.display = 'block';
+      } else if (type === 'file') {
+        id('row_file_settings').style.display = 'block';
+        if (f.options) {
+          const match = f.options.match(/^(\d+)(MB|KB)$/);
+          if (match) {
+            id('fld_max_size').value = match[1];
+            id('fld_size_unit').value = match[2];
+          }
+        }
+      }
+
       if (id('fld_width')) id('fld_width').value = f.column_width || 6;
       if (id('fld_required')) id('fld_required').checked = !!f.required;
       if (id('fld_order')) id('fld_order').value = f.sort_order || 99;
       if (id('fld_active')) id('fld_active').value = f.is_active;
       id('row_field_name').style.display = 'none';
-      if (f.field_type === 'select') id('row_options') && (id('row_options').style.display = 'block');
       modal.classList.add('active');
     });
   } else {
@@ -775,9 +801,18 @@ function openFieldModal(fieldId) {
   const typeSelect = id('fld_type');
   if (typeSelect) {
     typeSelect.onchange = () => {
-      id('row_options') && (id('row_options').style.display = typeSelect.value === 'select' ? 'block' : 'none');
+      const val = typeSelect.value;
+      if (id('row_options')) id('row_options').style.display = val === 'select' ? 'block' : 'none';
+      if (id('row_file_settings')) id('row_file_settings').style.display = val === 'file' ? 'block' : 'none';
     };
   }
+}
+
+// Ensure toggleOptionsRow is defined as it is called by onchange in HTML if not overridden
+function toggleOptionsRow() {
+  const val = id('fld_type').value;
+  if (id('row_options')) id('row_options').style.display = val === 'select' ? 'block' : 'none';
+  if (id('row_file_settings')) id('row_file_settings').style.display = val === 'file' ? 'block' : 'none';
 }
 
 function closeFieldModal() { id('fieldModal') && id('fieldModal').classList.remove('active'); }
@@ -785,15 +820,24 @@ function closeFieldModal() { id('fieldModal') && id('fieldModal').classList.remo
 async function saveField() {
   const fid = id('fld_id')?.value;
   const formId = id('builderFormSelector')?.value;
+  const type = id('fld_type')?.value || 'text';
+  
+  let options = id('fld_options')?.value?.trim() || null;
+  if (type === 'file') {
+    const size = id('fld_max_size')?.value;
+    const unit = id('fld_size_unit')?.value || 'MB';
+    options = size ? size + unit : null;
+  }
+
   const body = {
     form_id: parseInt(formId),
     step: parseInt(id('fld_step')?.value || '1'),
-    field_type: id('fld_type')?.value || 'text',
+    field_type: type,
     field_name: id('fld_name')?.value?.trim(),
     label: id('fld_label')?.value?.trim(),
     placeholder: '',
     required: id('fld_required')?.checked ? 1 : 0,
-    options: id('fld_options')?.value?.trim() || null,
+    options: options,
     column_width: parseInt(id('fld_width')?.value || '6'),
     sort_order: parseInt(id('fld_order')?.value || '99'),
     is_active: id('fld_active')?.value === '1' ? 1 : 0
@@ -819,9 +863,22 @@ async function deleteField(fid) {
   if (!confirm('Delete this field?')) return;
   try {
     const res = await fetch(`/api/form-fields/${fid}`, { method: 'DELETE' });
+    if (res.status === 401) {
+      showToast('Session expired. Please login again.');
+      setTimeout(() => window.location.href = '/login.html', 1500);
+      return;
+    }
     const data = await res.json();
-    if (data.success) { showToast('Field deleted!'); loadFormFields(); }
-  } catch (e) { showToast('Error deleting field'); }
+    if (data.success) {
+      showToast('Field deleted!');
+      loadFormFields();
+    } else {
+      showToast('Delete failed: ' + (data.message || 'Unknown error'));
+    }
+  } catch (e) {
+    showToast('Network error while deleting field');
+    console.error('deleteField error:', e);
+  }
 }
 
 async function saveFieldsOrder() {

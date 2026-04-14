@@ -531,7 +531,8 @@
             <option value="select">Dropdown</option>
             <option value="number">Number</option>
             <option value="date">Date</option>
-            <option value="photograph">Photograph Upload</option>
+            <option value="file">File Upload</option>
+            <option value="photograph" style="font-weight: bold; color: maroon;">Photograph Upload (Standard)</option>
           </select>
         </div>
         <div class="cms-field" id="row_field_name">
@@ -545,6 +546,17 @@
         <div class="cms-field" id="row_options" style="display:none;">
           <label>Select Options (Comma separated)</label>
           <input type="text" id="fld_options" class="cms-input" placeholder="Tamil, French, German">
+        </div>
+        <div class="cms-field" id="row_file_settings" style="display:none;">
+          <label>Max File Size Limit</label>
+          <div style="display:flex; gap:10px;">
+            <input type="number" id="fld_max_size" class="cms-input" placeholder="e.g. 5" style="flex:1;">
+            <select id="fld_size_unit" class="cms-input" style="width:100px;">
+              <option value="MB">MB</option>
+              <option value="KB">KB</option>
+            </select>
+          </div>
+          <small style="color:#64748b; font-size:11px;">Set limits like 2MB or 500KB. Leave blank for default (10MB).</small>
         </div>
         <div class="cms-field">
           <label>Grid Width</label>

@@ -286,32 +286,53 @@ const requirePermission = (permission) => {
 
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 
-app.post('/api/apply', upload.single('photograph'), (req, res) => {
-  try {
-    const { form_id, ...formData } = req.body;
-    const photograph_path = req.file ? '/uploads/' + req.file.filename : null;
+app.post('/api/apply', (req, res) => {
+  upload.any()(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ success: false, message: 'File upload error: ' + err.message });
+    } else if (err) {
+      return res.status(500).json({ success: false, message: 'Server error during upload: ' + err.message });
+    }
 
-    // ── Generate Unique Application Serial Number ──
-    const cycleRow = db.prepare('SELECT value FROM site_settings WHERE key = ?').get('admission_year');
-    const curYear = new Date().getFullYear();
-    const admissionCycle = (cycleRow && cycleRow.value) ? cycleRow.value : `${curYear} - ${curYear + 5}`;
-    const startYear = admissionCycle.match(/\d{4}/)?.[0] || curYear;
-    const countResult = db.prepare('SELECT COUNT(*) as count FROM applications').get();
-    const nextId = (countResult.count || 0) + 1;
-    const serialNo = `MCC/${startYear}/${nextId.toString().padStart(4, '0')}`;
+    try {
+      const { form_id, ...formData } = req.body;
+      let photograph_path = null;
 
-    db.prepare('INSERT INTO applications (form_id, serial_no, form_data, photograph_path) VALUES (?, ?, ?, ?)')
-      .run(form_id, serialNo, JSON.stringify(formData), photograph_path);
+      // Map uploaded files to their respective fields
+      if (req.files && req.files.length > 0) {
+        req.files.forEach(file => {
+          const path = '/uploads/' + file.filename;
+          if (file.fieldname === 'photograph') {
+            photograph_path = path;
+          } else {
+            // Save other file paths into the formData JSON
+            formData[file.fieldname] = path;
+          }
+        });
+      }
 
-    res.json({ 
-      success: true, 
-      message: 'Application submitted successfully!', 
-      serialNo: serialNo 
-    });
-  } catch (err) {
-    console.error('Submission Error:', err);
-    res.status(500).json({ success: false, message: 'Server error: ' + err.message });
-  }
+      // ── Generate Unique Application Serial Number ──
+      const cycleRow = db.prepare('SELECT value FROM site_settings WHERE key = ?').get('admission_year');
+      const curYear = new Date().getFullYear();
+      const admissionCycle = (cycleRow && cycleRow.value) ? cycleRow.value : `${curYear} - ${curYear + 5}`;
+      const startYear = admissionCycle.match(/\d{4}/)?.[0] || curYear;
+      const countResult = db.prepare('SELECT COUNT(*) as count FROM applications').get();
+      const nextId = (countResult.count || 0) + 1;
+      const serialNo = `MCC/${startYear}/${nextId.toString().padStart(4, '0')}`;
+
+      db.prepare('INSERT INTO applications (form_id, serial_no, form_data, photograph_path) VALUES (?, ?, ?, ?)')
+        .run(form_id, serialNo, JSON.stringify(formData), photograph_path);
+
+      res.json({ 
+        success: true, 
+        message: 'Application submitted successfully!', 
+        serialNo: serialNo 
+      });
+    } catch (err) {
+      console.error('Submission Error:', err);
+      res.status(500).json({ success: false, message: 'Server error: ' + err.message });
+    }
+  });
 });
 
 app.get('/api/next-serial', (req, res) => {

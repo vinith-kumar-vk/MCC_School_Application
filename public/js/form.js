@@ -205,6 +205,28 @@ function renderField(f) {
         </div>
       </div>
     `;
+  } else if (f.field_type === 'file') {
+    const sizeNote = f.options ? ` (Max: ${f.options})` : '';
+    inputHtml = `
+      <div class="file-input-wrapper" id="filewrap_${f.field_name}">
+        <div class="file-drop-zone" id="dropzone_${f.field_name}" onclick="document.getElementById('${f.field_name}').click()" style="border:2px dashed #cbd5e1; border-radius:10px; padding:18px 16px; text-align:center; cursor:pointer; background:#fafbfc; transition:all 0.2s;">
+          <span style="font-size:22px; color:#8B1A2E; margin-bottom:4px;">📄</span>
+          <div style="font-size:13px; font-weight:600; color:#475569;">Click to upload file</div>
+          <div style="font-size:11px; color:#94a3b8; margin-top:2px;">PDF, JPG, PNG${sizeNote}</div>
+        </div>
+        <input type="file" class="form-control premium-input" name="${f.field_name}" id="${f.field_name}" ${extraAttrs} onchange="handleFileAttach(this, '${f.options || ''}')" style="display:none;" />
+        <div class="file-info-bar" id="fileinfo_${f.field_name}" style="display:none; margin-top:8px; padding:8px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; display:none; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+            
+            <span class="file-info-name" style="font-size:12px; font-weight:600; color:#15803d; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+            <span class="file-info-size" style="font-size:11px; color:#64748b; flex-shrink:0;"></span>
+          </div>
+          <button type="button" onclick="removeAttachedFile('${f.field_name}')" style="background:#fee2e2; border:none; color:#dc2626; width:26px; height:26px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s;" title="Remove file">
+            <span style="font-size:14px; font-weight:bold; line-height:1;">✕</span>
+          </button>
+        </div>
+      </div>
+    `;
   }
 
   const colWidth = f.column_width || (f.field_type === 'textarea' ? 12 : 6);
@@ -321,6 +343,25 @@ function initFormLogic() {
         if (/pin_?code/.test(fname) && val.length !== 6) {
           isValid = false; showError(`err_${f.field_name}`, 'Must be exactly 6 digits'); el.classList.add('error');
         }
+        if (f.field_type === 'file') {
+          const fileInput = el; // same as id(f.field_name)
+          if (fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            if (f.options) {
+              const match = f.options.match(/^(\d+)(MB|KB)$/i);
+              if (match) {
+                const sizeVal = parseInt(match[1]);
+                const unit = match[2].toUpperCase();
+                const maxSizeInBytes = unit === 'MB' ? sizeVal * 1024 * 1024 : sizeVal * 1024;
+                if (file.size > maxSizeInBytes) {
+                  isValid = false; 
+                  showError(`err_${f.field_name}`, `File too large (Limit: ${f.options})`); 
+                  el.classList.add('error');
+                }
+              }
+            }
+          }
+        }
       }
     });
 
@@ -339,6 +380,72 @@ function initFormLogic() {
 }
 
 function closeModal() { id('successModal').classList.remove('active'); window.location.reload(); }
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function handleFileAttach(input, sizeStr) {
+  const name = input.name;
+  const errEl = id(`err_${name}`);
+  const infoBar = id(`fileinfo_${name}`);
+  const dropZone = id(`dropzone_${name}`);
+
+  if (!input.files || !input.files[0]) {
+    // No file selected — reset UI
+    if (infoBar) infoBar.style.display = 'none';
+    if (dropZone) dropZone.style.display = 'block';
+    return;
+  }
+
+  const file = input.files[0];
+
+  // Size validation
+  if (sizeStr) {
+    const match = sizeStr.match(/^(\d+)(MB|KB)$/i);
+    if (match) {
+      const sizeVal = parseInt(match[1]);
+      const unit = match[2].toUpperCase();
+      const maxSize = unit === 'MB' ? sizeVal * 1024 * 1024 : sizeVal * 1024;
+      if (file.size > maxSize) {
+        if (errEl) errEl.textContent = `⚠️ File too large (${formatFileSize(file.size)}). Limit is ${sizeStr}`;
+        input.classList.add('error');
+        input.value = '';
+        if (infoBar) infoBar.style.display = 'none';
+        if (dropZone) dropZone.style.display = 'block';
+        return;
+      }
+    }
+  }
+
+  // Valid file — show info bar, hide drop zone
+  if (errEl) errEl.textContent = '';
+  input.classList.remove('error');
+
+  if (infoBar) {
+    infoBar.querySelector('.file-info-name').textContent = file.name;
+    infoBar.querySelector('.file-info-size').textContent = '(' + formatFileSize(file.size) + ')';
+    infoBar.style.display = 'flex';
+  }
+  if (dropZone) dropZone.style.display = 'none';
+}
+
+function removeAttachedFile(fieldName) {
+  const input = id(fieldName);
+  const infoBar = id(`fileinfo_${fieldName}`);
+  const dropZone = id(`dropzone_${fieldName}`);
+  const errEl = id(`err_${fieldName}`);
+
+  if (input) { input.value = ''; input.classList.remove('error'); }
+  if (errEl) errEl.textContent = '';
+  if (infoBar) infoBar.style.display = 'none';
+  if (dropZone) dropZone.style.display = 'block';
+}
+
+// Keep old name as alias for backward compat
+function validateFileSize(input, sizeStr) { handleFileAttach(input, sizeStr); }
 
 // ── TAMIL PHONETIC TRANSLITERATION (Local Engine — No API needed) ──────────────
 // Converts English phonetic typing → Tamil Unicode in real-time
